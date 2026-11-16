@@ -1,0 +1,12 @@
+<%-- Mensagem flash (Post/Redirect/Get), gravada por br.ufg.vacinacao.util.Mensagens --%>
+<c:if test="${not empty sessionScope.flash}">
+    <div class="alert alert-${sessionScope.flash.tipo} alert-dismissible fade show" role="alert">
+        <c:out value="${sessionScope.flash.texto}" />
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    </div>
+    <c:remove var="flash" scope="session" />
+</c:if>
+<%-- Mensagem de erro da própria requisição (ex.: validação de formulário) --%>
+<c:if test="${not empty erro}">
+    <div class="alert alert-danger" role="alert"><c:out value="${erro}" /></div>
+</c:if>

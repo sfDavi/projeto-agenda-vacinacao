@@ -1,0 +1,39 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" href="${ctx}/home">
+            <i class="bi bi-shield-plus"></i> Vacinação
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal"
+                aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menuPrincipal">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link ${menuAtivo == 'home' ? 'active' : ''}" href="${ctx}/home">
+                        <i class="bi bi-house"></i> Início</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link ${menuAtivo == 'agendas' ? 'active' : ''}" href="${ctx}/agendas">
+                        <i class="bi bi-calendar-check"></i> Agendas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link ${menuAtivo == 'usuarios' ? 'active' : ''}" href="${ctx}/usuarios">
+                        <i class="bi bi-people"></i> Usuários</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link ${menuAtivo == 'vacinas' ? 'active' : ''}" href="${ctx}/vacinas">
+                        <i class="bi bi-capsule"></i> Vacinas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link ${menuAtivo == 'alergias' ? 'active' : ''}" href="${ctx}/alergias">
+                        <i class="bi bi-exclamation-triangle"></i> Alergias</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link ${menuAtivo == 'doses' ? 'active' : ''}" href="${ctx}/doses/proximas">
+                        <i class="bi bi-clock-history"></i> Próximas doses</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
