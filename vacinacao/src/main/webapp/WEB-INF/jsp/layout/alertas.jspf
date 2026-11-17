@@ -10,3 +10,14 @@
 <c:if test="${not empty erro}">
     <div class="alert alert-danger" role="alert"><c:out value="${erro}" /></div>
 </c:if>
+<%-- Lista de erros de validação do formulário --%>
+<c:if test="${not empty erros}">
+    <div class="alert alert-danger" role="alert">
+        <strong>Corrija os campos abaixo:</strong>
+        <ul class="mb-0 mt-1">
+            <c:forEach items="${erros}" var="mensagemErro">
+                <li><c:out value="${mensagemErro}" /></li>
+            </c:forEach>
+        </ul>
+    </div>
+</c:if>
