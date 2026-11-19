@@ -16,8 +16,11 @@ public class AlergiaDAO extends GenericDAO<Alergia> {
                 .getSingleResult() > 0);
     }
 
-    /** Quantos usuários têm esta alergia (tabela associativa usuario_alergia). */
+    /** Quantos usuários têm esta alergia (relacionamento N:N Usuario.alergias). */
     public long contarUsuarios(Integer alergiaId) {
-        return contarNativo("SELECT COUNT(*) FROM usuario_alergia WHERE alergia_id = ?1", alergiaId);
+        return consultar(em -> em.createQuery(
+                        "SELECT COUNT(u) FROM Usuario u JOIN u.alergias a WHERE a.id = :id", Long.class)
+                .setParameter("id", alergiaId)
+                .getSingleResult());
     }
 }
