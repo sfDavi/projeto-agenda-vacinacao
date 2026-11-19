@@ -68,20 +68,23 @@ public class UsuarioDAO extends GenericDAO<Usuario> {
         });
     }
 
-    /** Quantas agendas o usuário tem (são removidas junto com ele - ON DELETE CASCADE). */
+    /** Quantas agendas o usuário tem (são removidas junto com ele - cascade REMOVE). */
     public long contarAgendas(Integer usuarioId) {
-        return contarNativo("SELECT COUNT(*) FROM agendas WHERE usuario_id = ?1", usuarioId);
+        return consultar(em -> em.createQuery(
+                        "SELECT COUNT(a) FROM Agenda a WHERE a.usuario.id = :id", Long.class)
+                .setParameter("id", usuarioId)
+                .getSingleResult());
     }
 
     /** Mapa id do usuário -> quantidade de agendas (só usuários que têm agendas). */
     public Map<Integer, Long> contarAgendasPorUsuario() {
         return consultar(em -> {
             Map<Integer, Long> mapa = new HashMap<>();
-            @SuppressWarnings("unchecked")
-            List<Object[]> linhas = em.createNativeQuery(
-                    "SELECT usuario_id, COUNT(*) FROM agendas GROUP BY usuario_id").getResultList();
+            List<Object[]> linhas = em.createQuery(
+                    "SELECT a.usuario.id, COUNT(a) FROM Agenda a GROUP BY a.usuario.id", Object[].class)
+                    .getResultList();
             for (Object[] linha : linhas) {
-                mapa.put(((Number) linha[0]).intValue(), ((Number) linha[1]).longValue());
+                mapa.put((Integer) linha[0], (Long) linha[1]);
             }
             return mapa;
         });

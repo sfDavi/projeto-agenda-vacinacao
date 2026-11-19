@@ -27,6 +27,57 @@ document.addEventListener('DOMContentLoaded', () => {
         atualizar();
     }
 
+    // Formulário de agendamento: prévia das doses que serão geradas (GET /agendas/previa)
+    const formAgenda = document.getElementById('formAgenda');
+    const painelPrevia = document.getElementById('previa');
+    if (formAgenda && painelPrevia) {
+        const escapar = (texto) => String(texto)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        let ultimaRequisicao = 0;
+
+        const atualizarPrevia = async () => {
+            const params = new URLSearchParams({
+                vacina: formAgenda.vacina.value,
+                data: formAgenda.data.value,
+                usuario: formAgenda.usuario.value,
+            });
+            const hora = formAgenda.hora.value;
+            const requisicao = ++ultimaRequisicao;
+            try {
+                const resposta = await fetch(`${formAgenda.dataset.previaUrl}?${params}`);
+                const dados = await resposta.json();
+                if (requisicao !== ultimaRequisicao) {
+                    return; // chegou fora de ordem
+                }
+                if (!dados.ok) {
+                    painelPrevia.innerHTML = `<p class="text-body-secondary mb-0">${escapar(dados.erro)}</p>`;
+                    return;
+                }
+                const itens = dados.doses.map((d) => `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><span class="badge badge-agendado me-2">Dose ${d.dose}</span>${escapar(d.data)}
+                            <small class="text-body-secondary">(${escapar(d.diaSemana)})</small></span>
+                        <span class="text-body-secondary">${escapar(hora || '--:--')}</span>
+                    </li>`).join('');
+                const aviso = dados.aviso
+                    ? `<div class="alert alert-warning py-2 mb-2"><i class="bi bi-exclamation-triangle"></i> ${escapar(dados.aviso)}</div>`
+                    : '';
+                painelPrevia.innerHTML = `${aviso}
+                    <p class="mb-2"><strong>${escapar(dados.vacina)}</strong>
+                        <span class="text-body-secondary">&mdash; ${escapar(dados.esquema)}</span></p>
+                    <ul class="list-group">${itens}</ul>
+                    <p class="small text-body-secondary mt-2 mb-0">${dados.doses.length} agenda(s) serão criadas.</p>`;
+            } catch (erro) {
+                painelPrevia.innerHTML = '<p class="text-danger mb-0">Não foi possível carregar a prévia.</p>';
+            }
+        };
+
+        ['usuario', 'vacina', 'data', 'hora'].forEach((campo) => {
+            formAgenda[campo].addEventListener('change', atualizarPrevia);
+        });
+        atualizarPrevia();
+    }
+
     // Fecha automaticamente alertas de sucesso após alguns segundos
     document.querySelectorAll('.alert-success.alert-dismissible').forEach((alerta) => {
         setTimeout(() => bootstrap.Alert.getOrCreateInstance(alerta).close(), 5000);

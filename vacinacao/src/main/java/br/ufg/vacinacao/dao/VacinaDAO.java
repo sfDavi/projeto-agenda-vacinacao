@@ -10,6 +10,9 @@ public class VacinaDAO extends GenericDAO<Vacina> {
 
     /** Quantas agendas usam esta vacina (impede a exclusão). */
     public long contarAgendas(Integer vacinaId) {
-        return contarNativo("SELECT COUNT(*) FROM agendas WHERE vacina_id = ?1", vacinaId);
+        return consultar(em -> em.createQuery(
+                        "SELECT COUNT(a) FROM Agenda a WHERE a.vacina.id = :id", Long.class)
+                .setParameter("id", vacinaId)
+                .getSingleResult());
     }
 }

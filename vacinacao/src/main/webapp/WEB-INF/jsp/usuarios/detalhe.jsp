@@ -86,6 +86,8 @@
     </div>
     <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
         <a href="${ctx}/usuarios" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+        <a href="${ctx}/agendas/novo?usuario=${usuario.id}" class="btn btn-primary ms-auto">
+            <i class="bi bi-calendar-plus"></i> Agendar vacina</a>
         <form method="post" action="${ctx}/usuarios/excluir" class="d-inline"
               data-confirmar="Excluir o usuário &quot;${fn:escapeXml(usuario.nome)}&quot;?${totalAgendas > 0 ? ' Suas ' += totalAgendas += ' agenda(s) também serão removidas.' : ''}">
             <input type="hidden" name="id" value="${usuario.id}">

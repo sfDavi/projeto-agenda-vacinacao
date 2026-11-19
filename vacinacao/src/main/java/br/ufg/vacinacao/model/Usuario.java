@@ -1,6 +1,7 @@
 package br.ufg.vacinacao.model;
 
 import br.ufg.vacinacao.util.DatasUtil;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -12,12 +13,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -62,6 +66,11 @@ public class Usuario {
             inverseJoinColumns = @JoinColumn(name = "alergia_id"))
     @OrderBy("nome")
     private Set<Alergia> alergias = new LinkedHashSet<>();
+
+    /** Relacionamento 1:N do MER. Excluir o usuário exclui também as suas agendas. */
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.REMOVE)
+    @OrderBy("data, hora")
+    private List<Agenda> agendas = new ArrayList<>();
 
     public Usuario() {
     }
@@ -164,5 +173,13 @@ public class Usuario {
 
     public void setAlergias(Set<Alergia> alergias) {
         this.alergias = alergias;
+    }
+
+    public List<Agenda> getAgendas() {
+        return agendas;
+    }
+
+    public void setAgendas(List<Agenda> agendas) {
+        this.agendas = agendas;
     }
 }
