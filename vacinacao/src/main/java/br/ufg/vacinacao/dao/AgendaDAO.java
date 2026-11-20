@@ -4,7 +4,11 @@ import br.ufg.vacinacao.model.Agenda;
 import br.ufg.vacinacao.model.Situacao;
 import br.ufg.vacinacao.model.Usuario;
 import br.ufg.vacinacao.model.Vacina;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AgendaDAO extends GenericDAO<Agenda> {
@@ -22,6 +26,88 @@ public class AgendaDAO extends GenericDAO<Agenda> {
         return consultar(em -> em.createQuery(
                         SELECT_COMPLETO + "ORDER BY a.data, a.hora, a.usuario.nome", Agenda.class)
                 .getResultList());
+    }
+
+    /**
+     * Listagem com filtros opcionais (Item 3). Parâmetros nulos são ignorados.
+     *
+     * @param situacao  situação exata
+     * @param de        data mínima (inclusive)
+     * @param ate       data máxima (inclusive)
+     * @param usuarioId usuário
+     * @param vacinaId  vacina
+     */
+    public List<Agenda> filtrar(Situacao situacao, LocalDate de, LocalDate ate, Integer usuarioId, Integer vacinaId) {
+        List<String> condicoes = new ArrayList<>();
+        if (situacao != null) {
+            condicoes.add("a.situacao = :situacao");
+        }
+        if (de != null) {
+            condicoes.add("a.data >= :de");
+        }
+        if (ate != null) {
+            condicoes.add("a.data <= :ate");
+        }
+        if (usuarioId != null) {
+            condicoes.add("a.usuario.id = :usuario");
+        }
+        if (vacinaId != null) {
+            condicoes.add("a.vacina.id = :vacina");
+        }
+        String jpql = SELECT_COMPLETO
+                + (condicoes.isEmpty() ? "" : "WHERE " + String.join(" AND ", condicoes) + " ")
+                + "ORDER BY a.data, a.hora, a.usuario.nome";
+        return consultar(em -> {
+            TypedQuery<Agenda> query = em.createQuery(jpql, Agenda.class);
+            if (situacao != null) {
+                query.setParameter("situacao", situacao);
+            }
+            if (de != null) {
+                query.setParameter("de", de);
+            }
+            if (ate != null) {
+                query.setParameter("ate", ate);
+            }
+            if (usuarioId != null) {
+                query.setParameter("usuario", usuarioId);
+            }
+            if (vacinaId != null) {
+                query.setParameter("vacina", vacinaId);
+            }
+            return query.getResultList();
+        });
+    }
+
+    /**
+     * Agendas de um dia (Item 4), ordenadas por situação - Agendado, Realizado, Cancelado - e depois por hora.
+     */
+    public List<Agenda> listarDoDia(LocalDate dia) {
+        return consultar(em -> em.createQuery(SELECT_COMPLETO + "WHERE a.data = :dia ORDER BY "
+                        + "CASE a.situacao"
+                        + " WHEN br.ufg.vacinacao.model.Situacao.AGENDADO THEN 0"
+                        + " WHEN br.ufg.vacinacao.model.Situacao.REALIZADO THEN 1"
+                        + " ELSE 2 END, a.hora, a.usuario.nome", Agenda.class)
+                .setParameter("dia", dia)
+                .getResultList());
+    }
+
+    /**
+     * Grava a baixa (Item 5) se a agenda ainda estiver AGENDADO - a verificação é repetida dentro da
+     * transação para que duas baixas simultâneas não se sobreponham.
+     *
+     * @return {@code false} se a agenda não existir ou já tiver baixa
+     */
+    public boolean registrarBaixa(Integer id, Situacao novaSituacao, LocalDate dataSituacao, String observacoes) {
+        return emTransacao(em -> {
+            Agenda agenda = em.find(Agenda.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (agenda == null || agenda.getSituacao() != Situacao.AGENDADO) {
+                return false;
+            }
+            agenda.setSituacao(novaSituacao);
+            agenda.setDataSituacao(dataSituacao);
+            agenda.setObservacoes(observacoes);
+            return true;
+        });
     }
 
     /** Agenda com usuário e vacina carregados, ou {@code null}. */

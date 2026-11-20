@@ -1,0 +1,13 @@
+<%-- Botões de baixa (Item 5) para a agenda da variável "a". Abrem o modal de _modalBaixa.jspf. --%>
+<c:if test="${a.situacao.nome == 'AGENDADO'}">
+    <button type="button" class="btn btn-sm btn-success" title="Marcar como realizada"
+            data-bs-toggle="modal" data-bs-target="#modalBaixa"
+            data-id="${a.id}" data-acao="REALIZADO"
+            data-descricao="${fn:escapeXml(a.vacina.titulo)} (dose ${a.dose}) de ${fn:escapeXml(a.usuario.nome)} &ndash; ${a.dataFormatada} às ${a.hora}">
+        <i class="bi bi-check-lg"></i> Realizada</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" title="Cancelar agenda"
+            data-bs-toggle="modal" data-bs-target="#modalBaixa"
+            data-id="${a.id}" data-acao="CANCELADO"
+            data-descricao="${fn:escapeXml(a.vacina.titulo)} (dose ${a.dose}) de ${fn:escapeXml(a.usuario.nome)} &ndash; ${a.dataFormatada} às ${a.hora}">
+        <i class="bi bi-x-lg"></i> Cancelar</button>
+</c:if>

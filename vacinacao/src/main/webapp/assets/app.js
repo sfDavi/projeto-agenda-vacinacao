@@ -78,6 +78,36 @@ document.addEventListener('DOMContentLoaded', () => {
         atualizarPrevia();
     }
 
+    // Modal de baixa (Item 5): preenche com os dados do botão que o abriu
+    const modalBaixa = document.getElementById('modalBaixa');
+    if (modalBaixa) {
+        modalBaixa.addEventListener('show.bs.modal', (evento) => {
+            const botao = evento.relatedTarget;
+            const cancelar = botao.dataset.acao === 'CANCELADO';
+            const form = modalBaixa.querySelector('form');
+            form.elements.namedItem('id').value = botao.dataset.id;
+            form.elements.namedItem('acao').value = botao.dataset.acao;
+            form.elements.namedItem('motivo').value = '';
+            modalBaixa.querySelector('.modal-title').textContent = cancelar ? 'Cancelar agenda' : 'Registrar aplicação';
+            modalBaixa.querySelector('[data-baixa-pergunta]').textContent = cancelar
+                ? 'Confirma o cancelamento desta agenda?'
+                : 'Confirma que esta dose foi aplicada?';
+            modalBaixa.querySelector('[data-baixa-descricao]').textContent = botao.dataset.descricao;
+            modalBaixa.querySelector('[data-baixa-motivo]').hidden = !cancelar;
+            const confirmar = modalBaixa.querySelector('[data-baixa-confirmar]');
+            confirmar.className = `btn ${cancelar ? 'btn-danger' : 'btn-success'}`;
+            confirmar.innerHTML = cancelar
+                ? '<i class="bi bi-x-lg"></i> Cancelar agenda'
+                : '<i class="bi bi-check-lg"></i> Marcar como realizada';
+        });
+        modalBaixa.addEventListener('shown.bs.modal', () => {
+            const motivo = modalBaixa.querySelector('[name="motivo"]');
+            if (!motivo.closest('[data-baixa-motivo]').hidden) {
+                motivo.focus();
+            }
+        });
+    }
+
     // Fecha automaticamente alertas de sucesso após alguns segundos
     document.querySelectorAll('.alert-success.alert-dismissible').forEach((alerta) => {
         setTimeout(() => bootstrap.Alert.getOrCreateInstance(alerta).close(), 5000);

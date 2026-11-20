@@ -101,4 +101,48 @@ public class AgendamentoService {
         }
         return agendaDAO.salvarSerie(agendas);
     }
+
+    /**
+     * "Dar baixa" (Item 5): marca a agenda como REALIZADO ou CANCELADO com {@code data_situacao = hoje}.
+     * Só agendas AGENDADO podem receber baixa. Ao cancelar, o motivo (opcional) é acrescentado às observações.
+     *
+     * @param acao   {@code "REALIZADO"} ou {@code "CANCELADO"}
+     * @param motivo motivo do cancelamento (ignorado ao realizar)
+     * @return a agenda com a baixa registrada
+     */
+    public Agenda darBaixa(Integer agendaId, String acao, String motivo) throws RegraNegocioException {
+        Situacao nova = "REALIZADO".equals(acao) ? Situacao.REALIZADO
+                : "CANCELADO".equals(acao) ? Situacao.CANCELADO : null;
+        if (nova == null) {
+            throw new RegraNegocioException("Ação inválida: escolha Realizada ou Cancelar.");
+        }
+        Agenda agenda = agendaDAO.buscarCompleta(agendaId);
+        if (agenda == null) {
+            throw new RegraNegocioException("Agenda não encontrada.");
+        }
+        if (agenda.getSituacao() != Situacao.AGENDADO) {
+            throw new RegraNegocioException("Esta agenda já foi " + agenda.getSituacao().getRotuloFeminino()
+                    + " em " + agenda.getDataSituacaoFormatada() + "; não é possível dar baixa novamente.");
+        }
+
+        LocalDate hoje = LocalDate.now();
+        String observacoes = agenda.getObservacoes();
+        if (nova == Situacao.CANCELADO && motivo != null && !motivo.isBlank()) {
+            String registro = "Cancelada em " + DatasUtil.formatar(hoje) + ": " + motivo.trim();
+            observacoes = (observacoes == null || observacoes.isBlank()) ? registro : observacoes + " | " + registro;
+            if (observacoes.length() > TAMANHO_OBSERVACOES) {
+                int disponivel = Math.max(0, motivo.trim().length() - (observacoes.length() - TAMANHO_OBSERVACOES));
+                throw new RegraNegocioException("O motivo é longo demais para caber nas observações desta agenda "
+                        + "(use no máximo " + disponivel + " caracteres).");
+            }
+        }
+
+        if (!agendaDAO.registrarBaixa(agenda.getId(), nova, hoje, observacoes)) {
+            throw new RegraNegocioException("Esta agenda acabou de receber baixa por outra pessoa.");
+        }
+        agenda.setSituacao(nova);
+        agenda.setDataSituacao(hoje);
+        agenda.setObservacoes(observacoes);
+        return agenda;
+    }
 }

@@ -50,19 +50,21 @@
             </div>
             <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
                 <a href="${ctx}/agendas" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <c:set var="a" value="${agenda}" />
+                    <%@ include file="/WEB-INF/jsp/agendas/_botoesBaixa.jspf" %>
                     <form method="post" action="${ctx}/agendas/excluir" class="d-inline"
                           data-confirmar="Excluir somente esta agenda (dose ${agenda.dose} em ${agenda.dataFormatada})?">
                         <input type="hidden" name="id" value="${agenda.id}">
                         <input type="hidden" name="escopo" value="agenda">
-                        <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Excluir esta</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Excluir esta</button>
                     </form>
                     <c:if test="${agenda.situacao.nome == 'AGENDADO' and dosesSeguintesAgendadas > 0}">
                         <form method="post" action="${ctx}/agendas/excluir" class="d-inline"
                               data-confirmar="Excluir esta dose e as ${dosesSeguintesAgendadas} dose(s) seguinte(s) ainda agendada(s)?">
                             <input type="hidden" name="id" value="${agenda.id}">
                             <input type="hidden" name="escopo" value="seguintes">
-                            <button type="submit" class="btn btn-danger"><i class="bi bi-trash3"></i>
+                            <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash3"></i>
                                 Excluir esta e as seguintes (${dosesSeguintesAgendadas})</button>
                         </form>
                     </c:if>
@@ -101,4 +103,5 @@
     </div>
 </div>
 
+<%@ include file="/WEB-INF/jsp/agendas/_modalBaixa.jspf" %>
 <%@ include file="/WEB-INF/jsp/layout/footer.jspf" %>

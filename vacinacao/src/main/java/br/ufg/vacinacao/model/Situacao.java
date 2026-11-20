@@ -30,6 +30,11 @@ public enum Situacao {
         return ordemExibicao;
     }
 
+    /** Concordância com "agenda"/"dose": "agendada", "realizada", "cancelada". */
+    public String getRotuloFeminino() {
+        return rotulo.substring(0, rotulo.length() - 1).toLowerCase() + "a";
+    }
+
     public String getNome() {
         return name();
     }

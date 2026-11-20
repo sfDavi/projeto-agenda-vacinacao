@@ -22,12 +22,34 @@
     <div class="col-12 col-lg-7">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-calendar-day"></i> Agendas de hoje</span>
+                <span><i class="bi bi-calendar-day"></i> Agendas de hoje
+                    <span class="badge text-bg-light border ms-1">${fn:length(agendasHoje)}</span></span>
                 <a class="small" href="${ctx}/agendas/hoje">Ver todas</a>
             </div>
-            <div class="card-body text-body-secondary">
-                As agendas do dia aparecerão aqui.
-            </div>
+            <c:choose>
+                <c:when test="${empty agendasHoje}">
+                    <div class="card-body text-body-secondary">Nenhuma agenda para hoje.</div>
+                </c:when>
+                <c:otherwise>
+                    <ul class="list-group list-group-flush">
+                        <c:forEach items="${agendasHoje}" var="a">
+                            <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div>
+                                    <span class="fw-semibold me-2">${a.hora}</span>
+                                    <a href="${ctx}/agendas/detalhe?id=${a.id}" class="text-decoration-none">
+                                        <c:out value="${a.usuario.nome}" /></a>
+                                    <div class="small text-body-secondary">
+                                        <c:out value="${a.vacina.titulo}" /> &middot; dose ${a.dose}/${a.vacina.doses}</div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="badge ${a.situacao.classeCss} me-1">${a.situacao.rotulo}</span>
+                                    <%@ include file="/WEB-INF/jsp/agendas/_botoesBaixa.jspf" %>
+                                </div>
+                            </li>
+                        </c:forEach>
+                    </ul>
+                </c:otherwise>
+            </c:choose>
         </div>
     </div>
     <div class="col-12 col-lg-5">
@@ -67,4 +89,5 @@
     </div>
 </div>
 
+<%@ include file="/WEB-INF/jsp/agendas/_modalBaixa.jspf" %>
 <%@ include file="/WEB-INF/jsp/layout/footer.jspf" %>

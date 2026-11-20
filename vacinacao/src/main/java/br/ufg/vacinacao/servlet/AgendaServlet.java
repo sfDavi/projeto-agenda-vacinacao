@@ -21,14 +21,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** Agendas: listagem, agendamento (com geração automática das doses e prévia), detalhe e exclusão. */
-@WebServlet({"/agendas", "/agendas/novo", "/agendas/previa", "/agendas/detalhe", "/agendas/excluir"})
+@WebServlet({"/agendas", "/agendas/hoje", "/agendas/novo", "/agendas/previa", "/agendas/detalhe",
+        "/agendas/baixa", "/agendas/excluir"})
 public class AgendaServlet extends HttpServlet {
 
     private static final String HORA_PADRAO = "08:00";
+    /** Destinos aceitos no parâmetro "voltar" (caminhos internos da aplicação). */
+    private static final Pattern VOLTAR_VALIDO = Pattern.compile("^/[a-z/]+(\\?[\\w=&%.\\-+]*)?$");
 
     private final AgendaDAO dao = new AgendaDAO();
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
@@ -40,6 +46,7 @@ public class AgendaServlet extends HttpServlet {
         req.setAttribute("menuAtivo", "agendas");
         switch (req.getServletPath()) {
             case "/agendas" -> listar(req, resp);
+            case "/agendas/hoje" -> listarHoje(req, resp);
             case "/agendas/novo" -> exibirFormulario(req, resp, Parametros.inteiro(req, "usuario"),
                     Parametros.inteiro(req, "vacina"), LocalDate.now().toString(), HORA_PADRAO, null, List.of());
             case "/agendas/previa" -> previa(req, resp);
@@ -53,15 +60,79 @@ public class AgendaServlet extends HttpServlet {
         req.setAttribute("menuAtivo", "agendas");
         switch (req.getServletPath()) {
             case "/agendas/novo" -> agendar(req, resp);
+            case "/agendas/baixa" -> darBaixa(req, resp);
             case "/agendas/excluir" -> excluir(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
     }
 
+    /** Listagem com filtros (Item 3): situação, período, usuário e vacina. */
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setAttribute("titulo", "Agendas");
-        req.setAttribute("agendas", dao.listarTodas());
+        Situacao situacao = lerSituacao(Parametros.texto(req, "situacao"));
+        LocalDate de = lerData(Parametros.texto(req, "de"));
+        LocalDate ate = lerData(Parametros.texto(req, "ate"));
+        Integer usuarioId = Parametros.inteiro(req, "usuario");
+        Integer vacinaId = Parametros.inteiro(req, "vacina");
+
+        if (de != null && ate != null && de.isAfter(ate)) {
+            req.setAttribute("erro", "Período inválido: a data inicial é posterior à final. O período foi ignorado.");
+            de = null;
+            ate = null;
+        }
+
+        boolean filtrando = situacao != null || de != null || ate != null || usuarioId != null || vacinaId != null;
+        req.setAttribute("titulo", situacao == null ? "Agendas" : "Agendas - " + situacao.getRotulo());
+        req.setAttribute("agendas", dao.filtrar(situacao, de, ate, usuarioId, vacinaId));
+        req.setAttribute("filtroSituacao", situacao == null ? "" : situacao.name());
+        req.setAttribute("filtroDe", de == null ? "" : de.toString());
+        req.setAttribute("filtroAte", ate == null ? "" : ate.toString());
+        req.setAttribute("filtroUsuario", usuarioId);
+        req.setAttribute("filtroVacina", vacinaId);
+        req.setAttribute("filtrando", filtrando);
+        req.setAttribute("situacoes", Situacao.values());
+        req.setAttribute("usuarios", usuarioDAO.listarTodos());
+        req.setAttribute("vacinas", vacinaDAO.listarTodos());
+        req.setAttribute("urlAtual", urlAtual(req));
         req.getRequestDispatcher("/WEB-INF/jsp/agendas/lista.jsp").forward(req, resp);
+    }
+
+    /** Agendas de hoje (Item 4), ordenadas Agendado, Realizado, Cancelado e por hora. */
+    private void listarHoje(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        LocalDate hoje = LocalDate.now();
+        List<Agenda> agendas = dao.listarDoDia(hoje);
+        Map<Situacao, Long> totais = new EnumMap<>(Situacao.class);
+        for (Situacao s : Situacao.values()) {
+            totais.put(s, agendas.stream().filter(a -> a.getSituacao() == s).count());
+        }
+        req.setAttribute("menuAtivo", "hoje");
+        req.setAttribute("titulo", "Agendas de hoje");
+        req.setAttribute("hoje", DatasUtil.formatar(hoje));
+        req.setAttribute("diaSemana", DatasUtil.diaDaSemana(hoje));
+        req.setAttribute("agendas", agendas);
+        req.setAttribute("totais", totais);
+        req.setAttribute("urlAtual", urlAtual(req));
+        req.getRequestDispatcher("/WEB-INF/jsp/agendas/hoje.jsp").forward(req, resp);
+    }
+
+    /** POST /agendas/baixa (Item 5): id, acao (REALIZADO/CANCELADO), motivo, voltar. */
+    private void darBaixa(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        Integer id = Parametros.inteiro(req, "id");
+        try {
+            Agenda agenda = agendamentoService.darBaixa(id, Parametros.texto(req, "acao"),
+                    Parametros.texto(req, "motivo"));
+            Mensagens.sucesso(req, agenda.getVacina().getTitulo() + " (dose " + agenda.getDose() + ") de "
+                    + agenda.getUsuario().getNome() + " marcada como "
+                    + agenda.getSituacao().getRotuloFeminino() + " em " + agenda.getDataSituacaoFormatada() + ".");
+        } catch (RegraNegocioException e) {
+            Mensagens.erro(req, String.join(" ", e.getErros()));
+        } catch (PersistenceException e) {
+            Mensagens.erro(req, "Não foi possível registrar a baixa. Tente novamente.");
+        }
+        String voltar = req.getParameter("voltar");
+        if (voltar == null || !VOLTAR_VALIDO.matcher(voltar).matches()) {
+            voltar = id == null ? "/agendas" : "/agendas/detalhe?id=" + id;
+        }
+        resp.sendRedirect(req.getContextPath() + voltar);
     }
 
     private void detalhar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -79,6 +150,7 @@ public class AgendaServlet extends HttpServlet {
         req.setAttribute("agenda", agenda);
         req.setAttribute("serie", serie);
         req.setAttribute("dosesSeguintesAgendadas", dosesSeguintesAgendadas);
+        req.setAttribute("urlAtual", urlAtual(req));
         req.getRequestDispatcher("/WEB-INF/jsp/agendas/detalhe.jsp").forward(req, resp);
     }
 
@@ -198,6 +270,23 @@ public class AgendaServlet extends HttpServlet {
             Mensagens.erro(req, "Não foi possível excluir a agenda.");
         }
         resp.sendRedirect(req.getContextPath() + "/agendas");
+    }
+
+    private static Situacao lerSituacao(String texto) {
+        if (texto == null) {
+            return null;
+        }
+        try {
+            return Situacao.valueOf(texto.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** Caminho da requisição atual (sem o contexto), usado como destino após a baixa. */
+    static String urlAtual(HttpServletRequest req) {
+        String query = req.getQueryString();
+        return req.getServletPath() + (query == null ? "" : "?" + query);
     }
 
     private static LocalDate lerData(String texto) {
