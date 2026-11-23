@@ -1,5 +1,5 @@
 -- =====================================================================
--- Carga de exemplo. Executar depois de schema.sql:
+-- Carga de exemplo. Executar depois de schema.sql e item7.sql:
 --   mysql -u root -p vacinacao < sql/dados.sql
 -- As datas das agendas são relativas a CURDATE() para que sempre haja
 -- agendas "de hoje", passadas (com baixa) e futuras.
@@ -22,6 +22,13 @@ INSERT INTO vacinas (id, titulo, descricao, doses, periodicidade, intervalo) VAL
     (4, 'Tríplice Viral', 'Sarampo, caxumba e rubéola',                         2, 3,    1),
     (5, 'Dupla Adulto',   'Difteria e tétano - reforço a cada 10 anos',         5, 4,    3),
     (6, 'Antirrábica',    'Esquema pós-exposição',                              4, 1,    3);
+
+-- Item 7A: contraindicações (tabela de item7.sql)
+INSERT INTO vacina_alergia (vacina_id, alergia_id) VALUES
+    (1, 1),   -- Febre Amarela x Ovo
+    (1, 2),   -- Febre Amarela x Gelatina
+    (4, 2),   -- Tríplice Viral x Gelatina
+    (4, 4);   -- Tríplice Viral x Neomicina
 
 INSERT INTO usuarios (id, nome, data_nascimento, sexo, logradouro, numero, setor, cidade, uf) VALUES
     (1, 'Ana Beatriz Souza',   '1995-03-14', 'F', 'Rua 10',           120, 'Setor Oeste',     'Goiânia',           'GO'),
@@ -61,3 +68,11 @@ INSERT INTO agendas (data, hora, situacao, data_situacao, observacoes, usuario_i
 INSERT INTO agendas (data, hora, situacao, data_situacao, observacoes, usuario_id, vacina_id, dose) VALUES
     (DATE_SUB(CURDATE(), INTERVAL 5 DAY),   '11:00', 'AGENDADO', NULL, NULL, 2, 4, 1),
     (DATE_ADD(CURDATE(), INTERVAL 26 DAY),  '11:00', 'AGENDADO', NULL, NULL, 2, 4, 2);
+
+-- Item 7B: Antirrábica (4 doses, a cada 3 dias) para Carlos. A 1ª dose foi aplicada com 6 dias de
+-- atraso; a 2ª ficou antes da data mínima (aplicação + 3 dias) -> o sistema sugere recalcular.
+INSERT INTO agendas (data, hora, situacao, data_situacao, observacoes, usuario_id, vacina_id, dose) VALUES
+    (DATE_SUB(CURDATE(), INTERVAL 10 DAY), '15:00', 'REALIZADO', DATE_SUB(CURDATE(), INTERVAL 4 DAY), NULL, 4, 6, 1),
+    (DATE_SUB(CURDATE(), INTERVAL 7 DAY),  '15:00', 'AGENDADO',  NULL, NULL, 4, 6, 2),
+    (DATE_SUB(CURDATE(), INTERVAL 4 DAY),  '15:00', 'AGENDADO',  NULL, NULL, 4, 6, 3),
+    (DATE_SUB(CURDATE(), INTERVAL 1 DAY),  '15:00', 'AGENDADO',  NULL, NULL, 4, 6, 4);

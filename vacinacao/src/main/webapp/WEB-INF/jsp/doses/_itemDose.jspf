@@ -1,0 +1,14 @@
+<%-- Item de lista de uma dose agendada (variável "a"), usado em Próximas aplicações e no painel. --%>
+<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+        <div>
+            <span class="fw-semibold">${a.dataFormatada}</span> <span class="text-body-secondary">às ${a.hora}</span>
+            <span class="badge ${a.atrasada ? 'text-bg-danger' : 'text-bg-light border'} ms-1">${a.prazo}</span>
+        </div>
+        <a href="${ctx}/usuarios/agendas?id=${a.usuario.id}" class="text-decoration-none"><c:out value="${a.usuario.nome}" /></a>
+        <span class="small text-body-secondary">&middot; <c:out value="${a.vacina.titulo}" /> &middot; dose ${a.dose}/${a.vacina.doses}</span>
+    </div>
+    <div class="d-flex align-items-center gap-1">
+        <%@ include file="/WEB-INF/jsp/agendas/_botoesBaixa.jspf" %>
+    </div>
+</li>

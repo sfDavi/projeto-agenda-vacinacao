@@ -76,6 +76,51 @@ document.addEventListener('DOMContentLoaded', () => {
             formAgenda[campo].addEventListener('change', atualizarPrevia);
         });
         atualizarPrevia();
+
+        // 7A: marca com ⚠ as vacinas contraindicadas ao usuário e mostra o alerta da vacina escolhida
+        const alerta = document.getElementById('alertaContraindicacao');
+        if (alerta) {
+            const nomesConflito = alerta.querySelector('[data-alergias-conflito]');
+            const caixaCiente = alerta.querySelector('#ciente');
+            const opcoesVacina = Array.from(formAgenda.vacina.options).filter((o) => o.value);
+            opcoesVacina.forEach((o) => { o.dataset.textoOriginal = o.textContent.trim(); });
+            let contraindicadas = {};
+
+            const mostrarAlerta = () => {
+                const conflitos = contraindicadas[formAgenda.vacina.value];
+                if (conflitos && conflitos.length) {
+                    nomesConflito.textContent = conflitos.join(', ');
+                    alerta.hidden = false;
+                } else {
+                    alerta.hidden = true;
+                    caixaCiente.checked = false;
+                }
+            };
+
+            const carregarContraindicacoes = async () => {
+                contraindicadas = {};
+                if (formAgenda.usuario.value) {
+                    try {
+                        const params = new URLSearchParams({ usuario: formAgenda.usuario.value });
+                        const resposta = await fetch(`${alerta.dataset.contraindicacoesUrl}?${params}`);
+                        contraindicadas = (await resposta.json()).vacinas || {};
+                    } catch (erro) {
+                        contraindicadas = {}; // o servidor valida de qualquer forma ao salvar
+                    }
+                }
+                opcoesVacina.forEach((o) => {
+                    const conflitos = contraindicadas[o.value];
+                    o.textContent = conflitos
+                        ? `⚠ ${o.dataset.textoOriginal} (contraindicada: ${conflitos.join(', ')})`
+                        : o.dataset.textoOriginal;
+                });
+                mostrarAlerta();
+            };
+
+            formAgenda.usuario.addEventListener('change', carregarContraindicacoes);
+            formAgenda.vacina.addEventListener('change', mostrarAlerta);
+            carregarContraindicacoes();
+        }
     }
 
     // Modal de baixa (Item 5): preenche com os dados do botão que o abriu

@@ -44,6 +44,21 @@
                 </c:choose>
             </dd>
 
+            <dt class="col-sm-4 col-lg-3">Contraindicações</dt>
+            <dd class="col-sm-8 col-lg-9">
+                <c:choose>
+                    <c:when test="${empty vacina.contraindicacoes}"><span class="text-body-secondary">Nenhuma alergia registrada como contraindicação</span></c:when>
+                    <c:otherwise>
+                        <div class="d-flex flex-wrap gap-2">
+                            <c:forEach items="${vacina.contraindicacoes}" var="a">
+                                <span class="badge rounded-pill text-bg-danger fw-normal">
+                                    <i class="bi bi-exclamation-octagon"></i> <c:out value="${a.nome}" /></span>
+                            </c:forEach>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </dd>
+
             <dt class="col-sm-4 col-lg-3">Agendas</dt>
             <dd class="col-sm-8 col-lg-9">
                 <c:choose>

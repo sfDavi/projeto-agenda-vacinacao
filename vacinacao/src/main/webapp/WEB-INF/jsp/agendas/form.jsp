@@ -60,6 +60,21 @@
                               placeholder="Opcional, até 200 caracteres">${fn:escapeXml(observacoes)}</textarea>
                 </div>
 
+                <%-- 7A: alerta de contraindicação por alergia (mostrado pelo servidor após tentativa de salvar
+                     e, ao vivo, por app.js consultando /agendas/contraindicacoes) --%>
+                <div class="alert alert-danger" id="alertaContraindicacao" role="alert"
+                     data-contraindicacoes-url="${ctx}/agendas/contraindicacoes" ${empty conflitos ? 'hidden' : ''}>
+                    <h2 class="h6 alert-heading mb-1"><i class="bi bi-exclamation-octagon-fill"></i> Contraindicação por alergia</h2>
+                    <p class="mb-2">O usuário tem alergia a
+                        <strong data-alergias-conflito><c:forEach items="${conflitos}" var="nomeAlergia" varStatus="s"><c:out value="${nomeAlergia}" />${s.last ? '' : ', '}</c:forEach></strong>,
+                        registrada como contraindicação desta vacina.</p>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ciente" value="1" id="ciente" ${ciente ? 'checked' : ''}>
+                        <label class="form-check-label fw-semibold" for="ciente">Estou ciente &mdash; prosseguir mesmo assim</label>
+                    </div>
+                    <div class="small mt-1">O alerta ficará registrado nas observações de cada dose.</div>
+                </div>
+
                 <div class="d-flex justify-content-end gap-2">
                     <a href="${ctx}/agendas" class="btn btn-outline-secondary">Cancelar</a>
                     <button type="submit" class="btn btn-primary"><i class="bi bi-calendar-plus"></i> Agendar</button>

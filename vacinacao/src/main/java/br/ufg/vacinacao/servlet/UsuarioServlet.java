@@ -5,6 +5,8 @@ import br.ufg.vacinacao.dao.UsuarioDAO;
 import br.ufg.vacinacao.model.Sexo;
 import br.ufg.vacinacao.model.UF;
 import br.ufg.vacinacao.model.Usuario;
+import br.ufg.vacinacao.service.DoseService;
+import br.ufg.vacinacao.service.SerieDoses;
 import br.ufg.vacinacao.util.Mensagens;
 import br.ufg.vacinacao.util.Parametros;
 import jakarta.persistence.PersistenceException;
@@ -23,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 /** CRUD de usuários: listagem (com busca por nome), inclusão, detalhe e exclusão. */
-@WebServlet({"/usuarios", "/usuarios/novo", "/usuarios/detalhe", "/usuarios/excluir"})
+@WebServlet({"/usuarios", "/usuarios/novo", "/usuarios/detalhe", "/usuarios/agendas", "/usuarios/excluir"})
 public class UsuarioServlet extends HttpServlet {
 
     private static final int TAMANHO_NOME = 60;
@@ -35,6 +37,7 @@ public class UsuarioServlet extends HttpServlet {
 
     private final UsuarioDAO dao = new UsuarioDAO();
     private final AlergiaDAO alergiaDAO = new AlergiaDAO();
+    private final DoseService doseService = new DoseService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -43,6 +46,7 @@ public class UsuarioServlet extends HttpServlet {
             case "/usuarios" -> listar(req, resp);
             case "/usuarios/novo" -> exibirFormulario(req, resp, new Usuario(), Set.of(), List.of());
             case "/usuarios/detalhe" -> detalhar(req, resp);
+            case "/usuarios/agendas" -> cartao(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
     }
@@ -77,6 +81,24 @@ public class UsuarioServlet extends HttpServlet {
         req.setAttribute("usuario", usuario);
         req.setAttribute("totalAgendas", dao.contarAgendas(usuario.getId()));
         req.getRequestDispatcher("/WEB-INF/jsp/usuarios/detalhe.jsp").forward(req, resp);
+    }
+
+    /** Item 6 + 7B: cartão de vacinação - agendamentos do usuário agrupados por vacina, com progresso. */
+    private void cartao(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Usuario usuario = dao.buscarComAlergias(Parametros.inteiro(req, "id"));
+        if (usuario == null) {
+            Mensagens.erro(req, "Usuário não encontrado.");
+            resp.sendRedirect(req.getContextPath() + "/usuarios");
+            return;
+        }
+        List<SerieDoses> series = doseService.montarCartao(usuario.getId());
+        req.setAttribute("titulo", "Cartão de vacinação - " + usuario.getNome());
+        req.setAttribute("usuario", usuario);
+        req.setAttribute("series", series);
+        req.setAttribute("totalAgendas", series.stream().mapToInt(s -> s.getDoses().size()).sum());
+        req.setAttribute("hojeIso", LocalDate.now().toString());
+        req.setAttribute("urlAtual", "/usuarios/agendas?id=" + usuario.getId());
+        req.getRequestDispatcher("/WEB-INF/jsp/usuarios/agendas.jsp").forward(req, resp);
     }
 
     private void exibirFormulario(HttpServletRequest req, HttpServletResponse resp, Usuario usuario,

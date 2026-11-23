@@ -30,6 +30,7 @@ public class AgendamentoService {
     private final AgendaDAO agendaDAO = new AgendaDAO();
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
     private final VacinaDAO vacinaDAO = new VacinaDAO();
+    private final ContraindicacaoService contraindicacaoService = new ContraindicacaoService();
 
     /** Datas de todas as doses de uma série que começa em {@code inicio} (não acessa o banco). */
     public static List<LocalDate> calcularDatas(Vacina vacina, LocalDate inicio) {
@@ -52,11 +53,15 @@ public class AgendamentoService {
     /**
      * Valida e grava, numa única transação, todas as agendas da série.
      *
+     * Item 7A: se o usuário tiver alergia que contraindica a vacina, o agendamento só prossegue com
+     * {@code ciente = true}; nesse caso o texto do alerta é gravado nas observações (rastreabilidade).
+     *
      * @return as agendas criadas, em ordem de dose
-     * @throws RegraNegocioException com as mensagens de validação
+     * @throws ContraindicacaoException se houver contraindicação e {@code ciente} for falso
+     * @throws RegraNegocioException    com as mensagens de validação
      */
     public List<Agenda> agendar(Integer usuarioId, Integer vacinaId, LocalDate data, String hora,
-                                String observacoes) throws RegraNegocioException {
+                                String observacoes, boolean ciente) throws RegraNegocioException {
         List<String> erros = new ArrayList<>();
 
         Usuario usuario = usuarioDAO.buscarPorId(usuarioId);
@@ -84,6 +89,21 @@ public class AgendamentoService {
         }
         if (!erros.isEmpty()) {
             throw new RegraNegocioException(erros);
+        }
+
+        // 7A - contraindicação por alergia
+        List<String> conflitos = ContraindicacaoService.nomes(
+                contraindicacaoService.conflitos(usuario.getId(), vacina.getId()));
+        if (!conflitos.isEmpty()) {
+            if (!ciente) {
+                throw new ContraindicacaoException(conflitos);
+            }
+            String alerta = ContraindicacaoService.textoAlerta(conflitos);
+            observacoes = observacoes == null ? alerta : alerta + " | " + observacoes;
+            if (observacoes.length() > TAMANHO_OBSERVACOES) {
+                throw new RegraNegocioException("As observações, somadas ao registro do alerta de contraindicação, "
+                        + "passam de " + TAMANHO_OBSERVACOES + " caracteres. Encurte as observações.");
+            }
         }
 
         List<LocalDate> datas = calcularDatas(vacina, data);

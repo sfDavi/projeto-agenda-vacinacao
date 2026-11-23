@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "agendas")
@@ -62,6 +63,31 @@ public class Agenda {
 
     public String getDataSituacaoFormatada() {
         return DatasUtil.formatar(dataSituacao);
+    }
+
+    /** Dias de hoje até a data da agenda (negativo = já passou). Calculado, não armazenado (7B). */
+    public long getDiasAte() {
+        return ChronoUnit.DAYS.between(LocalDate.now(), data);
+    }
+
+    /** {@code true} se ainda está AGENDADO e a data já passou sem baixa (7B). */
+    public boolean isAtrasada() {
+        return situacao == Situacao.AGENDADO && data.isBefore(LocalDate.now());
+    }
+
+    /** "hoje", "amanhã", "em 5 dias", "atrasada há 3 dias" (7B). */
+    public String getPrazo() {
+        long dias = getDiasAte();
+        if (dias == 0) {
+            return "hoje";
+        }
+        if (dias == 1) {
+            return "amanhã";
+        }
+        if (dias > 1) {
+            return "em " + dias + " dias";
+        }
+        return "atrasada há " + (-dias) + (dias == -1 ? " dia" : " dias");
     }
 
     public Integer getId() {

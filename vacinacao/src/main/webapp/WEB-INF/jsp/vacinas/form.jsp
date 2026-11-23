@@ -52,6 +52,36 @@
                     Com dose única, esses campos não se aplicam.
                 </p>
 
+                <fieldset class="mb-3">
+                    <legend class="form-label fs-6 mb-1">
+                        <i class="bi bi-exclamation-octagon text-danger"></i> Contraindicações (alergias)
+                    </legend>
+                    <c:choose>
+                        <c:when test="${empty alergias}">
+                            <p class="text-body-secondary small mb-0">
+                                Nenhuma alergia cadastrada. <a href="${ctx}/alergias/novo">Cadastrar alergia</a>.
+                            </p>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="row row-cols-2 row-cols-md-3 g-2">
+                                <c:forEach items="${alergias}" var="a">
+                                    <div class="col">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="contraindicacoes"
+                                                   id="contra${a.id}" value="${a.id}"
+                                                ${contraindicacoesSelecionadas.contains(a.id) ? 'checked' : ''}>
+                                            <label class="form-check-label" for="contra${a.id}"><c:out value="${a.nome}" /></label>
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                            </div>
+                            <div class="form-text">
+                                Ao agendar esta vacina para um usuário com alguma dessas alergias, o sistema exibirá um alerta.
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+                </fieldset>
+
                 <div class="d-flex justify-content-end gap-2">
                     <a href="${ctx}/vacinas" class="btn btn-outline-secondary">Cancelar</a>
                     <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>

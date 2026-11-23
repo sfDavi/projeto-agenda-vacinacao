@@ -66,6 +66,8 @@
                             <td class="acoes text-end">
                                 <a href="${ctx}/usuarios/detalhe?id=${u.id}" class="btn btn-sm btn-outline-primary" title="Detalhes">
                                     <i class="bi bi-eye"></i> Detalhes</a>
+                                <a href="${ctx}/usuarios/agendas?id=${u.id}" class="btn btn-sm btn-outline-success" title="Cartão de vacinação">
+                                    <i class="bi bi-journal-medical"></i> Cartão</a>
                                 <form method="post" action="${ctx}/usuarios/excluir" class="d-inline"
                                       data-confirmar="Excluir o usuário &quot;${fn:escapeXml(u.nome)}&quot;?${qtdAgendas > 0 ? ' Suas ' += qtdAgendas += ' agenda(s) também serão removidas.' : ''}">
                                     <input type="hidden" name="id" value="${u.id}">

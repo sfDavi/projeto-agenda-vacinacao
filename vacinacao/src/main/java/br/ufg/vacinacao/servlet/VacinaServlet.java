@@ -1,5 +1,6 @@
 package br.ufg.vacinacao.servlet;
 
+import br.ufg.vacinacao.dao.AlergiaDAO;
 import br.ufg.vacinacao.dao.VacinaDAO;
 import br.ufg.vacinacao.model.Periodicidade;
 import br.ufg.vacinacao.model.Vacina;
@@ -14,7 +15,9 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /** CRUD de vacinas: listagem, inclusão, detalhe e exclusão. */
 @WebServlet({"/vacinas", "/vacinas/novo", "/vacinas/detalhe", "/vacinas/excluir"})
@@ -24,13 +27,14 @@ public class VacinaServlet extends HttpServlet {
     private static final int TAMANHO_DESCRICAO = 200;
 
     private final VacinaDAO dao = new VacinaDAO();
+    private final AlergiaDAO alergiaDAO = new AlergiaDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("menuAtivo", "vacinas");
         switch (req.getServletPath()) {
             case "/vacinas" -> listar(req, resp);
-            case "/vacinas/novo" -> exibirFormulario(req, resp, new Vacina(), List.of());
+            case "/vacinas/novo" -> exibirFormulario(req, resp, new Vacina(), Set.of(), List.of());
             case "/vacinas/detalhe" -> detalhar(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
@@ -48,12 +52,12 @@ public class VacinaServlet extends HttpServlet {
 
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("titulo", "Vacinas");
-        req.setAttribute("vacinas", dao.listarTodos());
+        req.setAttribute("vacinas", dao.listarComContraindicacoes());
         req.getRequestDispatcher("/WEB-INF/jsp/vacinas/lista.jsp").forward(req, resp);
     }
 
     private void detalhar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        Vacina vacina = dao.buscarPorId(Parametros.inteiro(req, "id"));
+        Vacina vacina = dao.buscarComContraindicacoes(Parametros.inteiro(req, "id"));
         if (vacina == null) {
             Mensagens.erro(req, "Vacina não encontrada.");
             resp.sendRedirect(req.getContextPath() + "/vacinas");
@@ -65,11 +69,14 @@ public class VacinaServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/jsp/vacinas/detalhe.jsp").forward(req, resp);
     }
 
-    private void exibirFormulario(HttpServletRequest req, HttpServletResponse resp, Vacina vacina, List<String> erros)
+    private void exibirFormulario(HttpServletRequest req, HttpServletResponse resp, Vacina vacina,
+                                  Set<Integer> contraindicacoesSelecionadas, List<String> erros)
             throws ServletException, IOException {
         req.setAttribute("titulo", "Nova vacina");
         req.setAttribute("vacina", vacina);
         req.setAttribute("periodicidades", Periodicidade.values());
+        req.setAttribute("alergias", alergiaDAO.listarTodos());
+        req.setAttribute("contraindicacoesSelecionadas", contraindicacoesSelecionadas);
         req.setAttribute("erros", erros);
         req.getRequestDispatcher("/WEB-INF/jsp/vacinas/form.jsp").forward(req, resp);
     }
@@ -77,14 +84,31 @@ public class VacinaServlet extends HttpServlet {
     private void incluir(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         List<String> erros = new ArrayList<>();
         Vacina vacina = lerFormulario(req, erros);
+        Set<Integer> contraindicacoes = new LinkedHashSet<>();
+        String[] valores = req.getParameterValues("contraindicacoes");
+        if (valores != null) {
+            for (String valor : valores) {
+                try {
+                    contraindicacoes.add(Integer.valueOf(valor.trim()));
+                } catch (NumberFormatException e) {
+                    erros.add("Seleção de contraindicações inválida.");
+                    break;
+                }
+            }
+        }
         if (!erros.isEmpty()) {
-            exibirFormulario(req, resp, vacina, erros);
+            exibirFormulario(req, resp, vacina, contraindicacoes, erros);
             return;
         }
         try {
-            dao.salvar(vacina);
+            dao.salvar(vacina, contraindicacoes);
+        } catch (IllegalArgumentException e) {
+            exibirFormulario(req, resp, vacina, contraindicacoes,
+                    List.of("Uma das alergias selecionadas não existe mais. Recarregue a página e tente de novo."));
+            return;
         } catch (PersistenceException e) {
-            exibirFormulario(req, resp, vacina, List.of("Não foi possível salvar a vacina. Confira os dados informados."));
+            exibirFormulario(req, resp, vacina, contraindicacoes,
+                    List.of("Não foi possível salvar a vacina. Confira os dados informados."));
             return;
         }
         Mensagens.sucesso(req, "Vacina \"" + vacina.getTitulo() + "\" cadastrada.");

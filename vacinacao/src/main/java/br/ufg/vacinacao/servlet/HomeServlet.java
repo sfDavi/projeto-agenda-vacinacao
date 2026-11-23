@@ -1,6 +1,8 @@
 package br.ufg.vacinacao.servlet;
 
 import br.ufg.vacinacao.dao.AgendaDAO;
+import br.ufg.vacinacao.model.Agenda;
+import br.ufg.vacinacao.service.DoseService;
 import br.ufg.vacinacao.util.DatasUtil;
 import jakarta.persistence.PersistenceException;
 import jakarta.servlet.ServletException;
@@ -17,7 +19,10 @@ import java.util.List;
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
 
+    private static final int LIMITE_PROXIMAS = 6;
+
     private final AgendaDAO agendaDAO = new AgendaDAO();
+    private final DoseService doseService = new DoseService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -32,12 +37,19 @@ public class HomeServlet extends HttpServlet {
         if (erroJpa == null) {
             try {
                 req.setAttribute("agendasHoje", agendaDAO.listarDoDia(hoje));
+                // 7B: atrasadas + próximas (sem as de hoje, que já estão no outro card)
+                List<Agenda> pendentes = doseService.proximasEAtrasadas().stream()
+                        .filter(a -> !a.getData().equals(hoje))
+                        .toList();
+                req.setAttribute("totalAtrasadas", pendentes.stream().filter(Agenda::isAtrasada).count());
+                req.setAttribute("proximasHome", pendentes.stream().limit(LIMITE_PROXIMAS).toList());
             } catch (PersistenceException e) {
                 erroJpa = e.getMessage();
             }
         }
         if (erroJpa != null) {
             req.setAttribute("agendasHoje", List.of());
+            req.setAttribute("proximasHome", List.of());
         }
         req.setAttribute("erroJpa", erroJpa);
         req.getRequestDispatcher("/WEB-INF/jsp/home.jsp").forward(req, resp);

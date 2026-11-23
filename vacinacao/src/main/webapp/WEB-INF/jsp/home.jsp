@@ -55,12 +55,24 @@
     <div class="col-12 col-lg-5">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-clock-history"></i> Próximas aplicações</span>
+                <span><i class="bi bi-clock-history"></i> Próximas aplicações
+                    <c:if test="${totalAtrasadas > 0}">
+                        <span class="badge text-bg-danger ms-1">${totalAtrasadas} atrasada(s)</span>
+                    </c:if></span>
                 <a class="small" href="${ctx}/doses/proximas">Ver todas</a>
             </div>
-            <div class="card-body text-body-secondary">
-                As próximas doses e as atrasadas aparecerão aqui.
-            </div>
+            <c:choose>
+                <c:when test="${empty proximasHome}">
+                    <div class="card-body text-body-secondary">Nenhuma dose atrasada ou agendada para os próximos dias.</div>
+                </c:when>
+                <c:otherwise>
+                    <ul class="list-group list-group-flush">
+                        <c:forEach items="${proximasHome}" var="a">
+                            <%@ include file="/WEB-INF/jsp/doses/_itemDose.jspf" %>
+                        </c:forEach>
+                    </ul>
+                </c:otherwise>
+            </c:choose>
         </div>
     </div>
 </div>

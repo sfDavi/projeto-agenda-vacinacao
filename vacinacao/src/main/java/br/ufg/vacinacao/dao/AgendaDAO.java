@@ -10,6 +10,7 @@ import jakarta.persistence.TypedQuery;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class AgendaDAO extends GenericDAO<Agenda> {
 
@@ -131,6 +132,45 @@ public class AgendaDAO extends GenericDAO<Agenda> {
                 .getResultList());
     }
 
+    /** Todas as agendas do usuário, por vacina e data (Item 6 - cartão de vacinação). */
+    public List<Agenda> listarPorUsuario(Integer usuarioId) {
+        return consultar(em -> em.createQuery(SELECT_COMPLETO
+                        + "WHERE a.usuario.id = :u ORDER BY a.vacina.titulo, a.data, a.dose", Agenda.class)
+                .setParameter("u", usuarioId)
+                .getResultList());
+    }
+
+    /** Agendas ainda AGENDADO com data até {@code limite} - inclui as atrasadas (7B). */
+    public List<Agenda> listarAgendadasAte(LocalDate limite) {
+        return consultar(em -> em.createQuery(SELECT_COMPLETO
+                        + "WHERE a.situacao = :s AND a.data <= :limite ORDER BY a.data, a.hora, a.usuario.nome",
+                        Agenda.class)
+                .setParameter("s", Situacao.AGENDADO)
+                .setParameter("limite", limite)
+                .getResultList());
+    }
+
+    /**
+     * Altera a data das agendas informadas (id -> nova data), numa única transação.
+     * Só altera as que ainda estão AGENDADO.
+     *
+     * @return quantidade de agendas alteradas
+     */
+    public int reprogramar(Map<Integer, LocalDate> novasDatas) {
+        return emTransacao(em -> {
+            int alteradas = 0;
+            for (Map.Entry<Integer, LocalDate> item : novasDatas.entrySet()) {
+                Agenda agenda = em.find(Agenda.class, item.getKey(), LockModeType.PESSIMISTIC_WRITE);
+                if (agenda != null && agenda.getSituacao() == Situacao.AGENDADO
+                        && !agenda.getData().equals(item.getValue())) {
+                    agenda.setData(item.getValue());
+                    alteradas++;
+                }
+            }
+            return alteradas;
+        });
+    }
+
     /** {@code true} se o usuário já tem alguma dose AGENDADO desta vacina (série em aberto). */
     public boolean existeSerieAberta(Integer usuarioId, Integer vacinaId) {
         return consultar(em -> em.createQuery("SELECT COUNT(a) FROM Agenda a "
@@ -141,7 +181,10 @@ public class AgendaDAO extends GenericDAO<Agenda> {
                 .getSingleResult() > 0);
     }
 
-    /** Grava todas as agendas de uma série numa única transação (tudo ou nada). */
+    /**
+     * Grava todas as agendas de uma série numa única transação (tudo ou nada).
+     * Atenção: usuário e vacina de cada agenda passam a ser referências (proxies) deste EntityManager.
+     */
     public List<Agenda> salvarSerie(List<Agenda> agendas) {
         return emTransacao(em -> {
             for (Agenda agenda : agendas) {

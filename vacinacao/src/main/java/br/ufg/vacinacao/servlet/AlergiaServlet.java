@@ -90,9 +90,17 @@ public class AlergiaServlet extends HttpServlet {
             Mensagens.erro(req, "Alergia não encontrada.");
         } else {
             long usuarios = dao.contarUsuarios(alergia.getId());
-            if (usuarios > 0) {
-                Mensagens.erro(req, "Não é possível excluir \"" + alergia.getNome() + "\": ela está registrada em "
-                        + usuarios + (usuarios == 1 ? " usuário." : " usuários."));
+            long vacinas = dao.contarVacinas(alergia.getId());
+            if (usuarios > 0 || vacinas > 0) {
+                List<String> usos = new ArrayList<>();
+                if (usuarios > 0) {
+                    usos.add("está registrada em " + usuarios + (usuarios == 1 ? " usuário" : " usuários"));
+                }
+                if (vacinas > 0) {
+                    usos.add("é contraindicação de " + vacinas + (vacinas == 1 ? " vacina" : " vacinas"));
+                }
+                Mensagens.erro(req, "Não é possível excluir \"" + alergia.getNome() + "\": ela "
+                        + String.join(" e ", usos) + ".");
             } else {
                 try {
                     dao.excluir(alergia.getId());

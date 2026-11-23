@@ -22,6 +22,7 @@
                         <th scope="col" class="text-center">Doses</th>
                         <th scope="col">Periodicidade</th>
                         <th scope="col" class="text-center">Intervalo</th>
+                        <th scope="col" class="text-center">Contraindicações</th>
                         <th scope="col" class="text-end">Ações</th>
                     </tr>
                     </thead>
@@ -47,6 +48,15 @@
                                 <c:choose>
                                     <c:when test="${v.doseUnica}"><span class="text-body-secondary">&mdash;</span></c:when>
                                     <c:otherwise>${v.intervalo}</c:otherwise>
+                                </c:choose>
+                            </td>
+                            <td class="text-center">
+                                <c:choose>
+                                    <c:when test="${empty v.contraindicacoes}"><span class="text-body-secondary">0</span></c:when>
+                                    <c:otherwise>
+                                        <span class="badge text-bg-danger" title="<c:forEach items='${v.contraindicacoes}' var='a' varStatus='s'>${fn:escapeXml(a.nome)}${s.last ? '' : ', '}</c:forEach>">
+                                            ${fn:length(v.contraindicacoes)}</span>
+                                    </c:otherwise>
                                 </c:choose>
                             </td>
                             <td class="acoes text-end">

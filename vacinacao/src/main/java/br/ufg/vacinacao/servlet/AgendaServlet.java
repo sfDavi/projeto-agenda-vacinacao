@@ -7,6 +7,8 @@ import br.ufg.vacinacao.model.Agenda;
 import br.ufg.vacinacao.model.Situacao;
 import br.ufg.vacinacao.model.Vacina;
 import br.ufg.vacinacao.service.AgendamentoService;
+import br.ufg.vacinacao.service.ContraindicacaoException;
+import br.ufg.vacinacao.service.ContraindicacaoService;
 import br.ufg.vacinacao.service.RegraNegocioException;
 import br.ufg.vacinacao.util.DatasUtil;
 import br.ufg.vacinacao.util.Mensagens;
@@ -28,8 +30,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** Agendas: listagem, agendamento (com geração automática das doses e prévia), detalhe e exclusão. */
-@WebServlet({"/agendas", "/agendas/hoje", "/agendas/novo", "/agendas/previa", "/agendas/detalhe",
-        "/agendas/baixa", "/agendas/excluir"})
+@WebServlet({"/agendas", "/agendas/hoje", "/agendas/novo", "/agendas/previa", "/agendas/contraindicacoes",
+        "/agendas/detalhe", "/agendas/baixa", "/agendas/excluir"})
 public class AgendaServlet extends HttpServlet {
 
     private static final String HORA_PADRAO = "08:00";
@@ -40,6 +42,7 @@ public class AgendaServlet extends HttpServlet {
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
     private final VacinaDAO vacinaDAO = new VacinaDAO();
     private final AgendamentoService agendamentoService = new AgendamentoService();
+    private final ContraindicacaoService contraindicacaoService = new ContraindicacaoService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -50,6 +53,7 @@ public class AgendaServlet extends HttpServlet {
             case "/agendas/novo" -> exibirFormulario(req, resp, Parametros.inteiro(req, "usuario"),
                     Parametros.inteiro(req, "vacina"), LocalDate.now().toString(), HORA_PADRAO, null, List.of());
             case "/agendas/previa" -> previa(req, resp);
+            case "/agendas/contraindicacoes" -> contraindicacoes(req, resp);
             case "/agendas/detalhe" -> detalhar(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
@@ -176,6 +180,8 @@ public class AgendaServlet extends HttpServlet {
         String dataTexto = Parametros.texto(req, "data");
         String hora = Parametros.texto(req, "hora");
         String observacoes = Parametros.texto(req, "observacoes");
+        boolean ciente = "1".equals(req.getParameter("ciente"));
+        req.setAttribute("ciente", ciente);
 
         LocalDate data = lerData(dataTexto);
         if (dataTexto != null && data == null) {
@@ -186,7 +192,12 @@ public class AgendaServlet extends HttpServlet {
 
         List<Agenda> criadas;
         try {
-            criadas = agendamentoService.agendar(usuarioId, vacinaId, data, hora, observacoes);
+            criadas = agendamentoService.agendar(usuarioId, vacinaId, data, hora, observacoes, ciente);
+        } catch (ContraindicacaoException e) {
+            // 7A: volta ao formulário com o alerta vermelho e a caixa "Estou ciente"
+            req.setAttribute("conflitos", e.getAlergias());
+            exibirFormulario(req, resp, usuarioId, vacinaId, dataTexto, hora, observacoes, List.of());
+            return;
         } catch (RegraNegocioException e) {
             exibirFormulario(req, resp, usuarioId, vacinaId, dataTexto, hora, observacoes, e.getErros());
             return;
@@ -244,6 +255,29 @@ public class AgendaServlet extends HttpServlet {
             }
         }
         json.append('}');
+        resp.getWriter().write(json.toString());
+    }
+
+    /**
+     * GET /agendas/contraindicacoes?usuario= (7A): vacinas contraindicadas ao usuário, em JSON.
+     * Formato: {"ok":true,"vacinas":{"<idVacina>":["Alergia", ...], ...}}
+     */
+    private void contraindicacoes(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json;charset=UTF-8");
+        Map<Integer, List<String>> mapa = contraindicacaoService.vacinasContraindicadas(
+                Parametros.inteiro(req, "usuario"));
+        StringBuilder json = new StringBuilder("{\"ok\":true,\"vacinas\":{");
+        boolean primeira = true;
+        for (Map.Entry<Integer, List<String>> item : mapa.entrySet()) {
+            if (!primeira) {
+                json.append(',');
+            }
+            primeira = false;
+            json.append(texto(String.valueOf(item.getKey()))).append(":[")
+                    .append(item.getValue().stream().map(AgendaServlet::texto).collect(Collectors.joining(",")))
+                    .append(']');
+        }
+        json.append("}}");
         resp.getWriter().write(json.toString());
     }
 

@@ -1,12 +1,21 @@
 package br.ufg.vacinacao.model;
 
+import br.ufg.vacinacao.util.DatasUtil;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "vacinas")
@@ -34,7 +43,34 @@ public class Vacina {
     @Column(name = "intervalo")
     private Integer intervalo;
 
+    /** Item 7A: alergias que contraindicam esta vacina (tabela vacina_alergia, criada em item7.sql). */
+    @ManyToMany
+    @JoinTable(name = "vacina_alergia",
+            joinColumns = @JoinColumn(name = "vacina_id"),
+            inverseJoinColumns = @JoinColumn(name = "alergia_id"))
+    @OrderBy("nome")
+    private Set<Alergia> contraindicacoes = new LinkedHashSet<>();
+
     public Vacina() {
+    }
+
+    /**
+     * Soma {@code quantidade} intervalos à data (usado pelo controle de doses - 7B).
+     * Para dose única devolve a própria data.
+     */
+    public LocalDate somarIntervalos(LocalDate data, int quantidade) {
+        if (isDoseUnica() || periodicidade == null || intervalo == null) {
+            return data;
+        }
+        return DatasUtil.somar(data, periodicidade, quantidade * intervalo);
+    }
+
+    public Set<Alergia> getContraindicacoes() {
+        return contraindicacoes;
+    }
+
+    public void setContraindicacoes(Set<Alergia> contraindicacoes) {
+        this.contraindicacoes = contraindicacoes;
     }
 
     public boolean isDoseUnica() {
