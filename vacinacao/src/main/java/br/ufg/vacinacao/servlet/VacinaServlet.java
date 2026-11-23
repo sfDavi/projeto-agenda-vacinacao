@@ -19,8 +19,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** CRUD de vacinas: listagem, inclusão, detalhe e exclusão. */
-@WebServlet({"/vacinas", "/vacinas/novo", "/vacinas/detalhe", "/vacinas/excluir"})
+/** CRUD de vacinas: listagem, inclusão, alteração, detalhe e exclusão. */
+@WebServlet({"/vacinas", "/vacinas/novo", "/vacinas/editar", "/vacinas/detalhe", "/vacinas/excluir"})
 public class VacinaServlet extends HttpServlet {
 
     private static final int TAMANHO_TITULO = 60;
@@ -34,7 +34,8 @@ public class VacinaServlet extends HttpServlet {
         req.setAttribute("menuAtivo", "vacinas");
         switch (req.getServletPath()) {
             case "/vacinas" -> listar(req, resp);
-            case "/vacinas/novo" -> exibirFormulario(req, resp, new Vacina(), Set.of(), List.of());
+            case "/vacinas/novo" -> exibirFormulario(req, resp, new Vacina(), Set.of(), false, List.of());
+            case "/vacinas/editar" -> editar(req, resp);
             case "/vacinas/detalhe" -> detalhar(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
@@ -44,7 +45,7 @@ public class VacinaServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("menuAtivo", "vacinas");
         switch (req.getServletPath()) {
-            case "/vacinas/novo" -> incluir(req, resp);
+            case "/vacinas/novo", "/vacinas/editar" -> salvar(req, resp);
             case "/vacinas/excluir" -> excluir(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
@@ -69,11 +70,28 @@ public class VacinaServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/jsp/vacinas/detalhe.jsp").forward(req, resp);
     }
 
+    private void editar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Vacina vacina = dao.buscarComContraindicacoes(Parametros.inteiro(req, "id"));
+        if (vacina == null) {
+            Mensagens.erro(req, "Vacina não encontrada.");
+            resp.sendRedirect(req.getContextPath() + "/vacinas");
+            return;
+        }
+        Set<Integer> selecionadas = new LinkedHashSet<>();
+        vacina.getContraindicacoes().forEach(a -> selecionadas.add(a.getId()));
+        exibirFormulario(req, resp, vacina, selecionadas, dao.contarAgendas(vacina.getId()) > 0, List.of());
+    }
+
+    /**
+     * @param esquemaBloqueado doses, periodicidade e intervalo não podem mudar quando já há agendas
+     *                         (as séries existentes foram geradas com o esquema atual)
+     */
     private void exibirFormulario(HttpServletRequest req, HttpServletResponse resp, Vacina vacina,
-                                  Set<Integer> contraindicacoesSelecionadas, List<String> erros)
-            throws ServletException, IOException {
-        req.setAttribute("titulo", "Nova vacina");
+                                  Set<Integer> contraindicacoesSelecionadas, boolean esquemaBloqueado,
+                                  List<String> erros) throws ServletException, IOException {
+        req.setAttribute("titulo", vacina.getId() == null ? "Nova vacina" : "Editar vacina");
         req.setAttribute("vacina", vacina);
+        req.setAttribute("esquemaBloqueado", esquemaBloqueado);
         req.setAttribute("periodicidades", Periodicidade.values());
         req.setAttribute("alergias", alergiaDAO.listarTodos());
         req.setAttribute("contraindicacoesSelecionadas", contraindicacoesSelecionadas);
@@ -81,9 +99,26 @@ public class VacinaServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/jsp/vacinas/form.jsp").forward(req, resp);
     }
 
-    private void incluir(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    /** Inclusão (POST /vacinas/novo) ou alteração (POST /vacinas/editar com id). */
+    private void salvar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        boolean edicao = "/vacinas/editar".equals(req.getServletPath());
+        Vacina existente = null;
+        boolean esquemaBloqueado = false;
+        if (edicao) {
+            existente = dao.buscarPorId(Parametros.inteiro(req, "id"));
+            if (existente == null) {
+                Mensagens.erro(req, "Vacina não encontrada.");
+                resp.sendRedirect(req.getContextPath() + "/vacinas");
+                return;
+            }
+            esquemaBloqueado = dao.contarAgendas(existente.getId()) > 0;
+        }
+
         List<String> erros = new ArrayList<>();
-        Vacina vacina = lerFormulario(req, erros);
+        Vacina vacina = lerFormulario(req, erros, esquemaBloqueado ? existente : null);
+        if (existente != null) {
+            vacina.setId(existente.getId());
+        }
         Set<Integer> contraindicacoes = new LinkedHashSet<>();
         String[] valores = req.getParameterValues("contraindicacoes");
         if (valores != null) {
@@ -97,26 +132,31 @@ public class VacinaServlet extends HttpServlet {
             }
         }
         if (!erros.isEmpty()) {
-            exibirFormulario(req, resp, vacina, contraindicacoes, erros);
+            exibirFormulario(req, resp, vacina, contraindicacoes, esquemaBloqueado, erros);
             return;
         }
         try {
             dao.salvar(vacina, contraindicacoes);
         } catch (IllegalArgumentException e) {
-            exibirFormulario(req, resp, vacina, contraindicacoes,
+            exibirFormulario(req, resp, vacina, contraindicacoes, esquemaBloqueado,
                     List.of("Uma das alergias selecionadas não existe mais. Recarregue a página e tente de novo."));
             return;
         } catch (PersistenceException e) {
-            exibirFormulario(req, resp, vacina, contraindicacoes,
+            exibirFormulario(req, resp, vacina, contraindicacoes, esquemaBloqueado,
                     List.of("Não foi possível salvar a vacina. Confira os dados informados."));
             return;
         }
-        Mensagens.sucesso(req, "Vacina \"" + vacina.getTitulo() + "\" cadastrada.");
+        Mensagens.sucesso(req, "Vacina \"" + vacina.getTitulo() + "\" " + (edicao ? "alterada." : "cadastrada."));
         resp.sendRedirect(req.getContextPath() + "/vacinas/detalhe?id=" + vacina.getId());
     }
 
-    /** Monta a vacina com os dados do formulário, acumulando as mensagens de validação em {@code erros}. */
-    private Vacina lerFormulario(HttpServletRequest req, List<String> erros) {
+    /**
+     * Monta a vacina com os dados do formulário, acumulando as mensagens de validação em {@code erros}.
+     *
+     * @param esquemaAtual se informado, doses/periodicidade/intervalo são copiados dela e os campos do
+     *                     formulário são ignorados (vacina com agendas)
+     */
+    private Vacina lerFormulario(HttpServletRequest req, List<String> erros, Vacina esquemaAtual) {
         Vacina vacina = new Vacina();
         vacina.setTitulo(Parametros.texto(req, "titulo"));
         vacina.setDescricao(Parametros.texto(req, "descricao"));
@@ -128,6 +168,13 @@ public class VacinaServlet extends HttpServlet {
         }
         if (vacina.getDescricao() != null && vacina.getDescricao().length() > TAMANHO_DESCRICAO) {
             erros.add("A descrição deve ter no máximo " + TAMANHO_DESCRICAO + " caracteres.");
+        }
+
+        if (esquemaAtual != null) {
+            vacina.setDoses(esquemaAtual.getDoses());
+            vacina.setPeriodicidade(esquemaAtual.getPeriodicidade());
+            vacina.setIntervalo(esquemaAtual.getIntervalo());
+            return vacina;
         }
 
         Integer doses = Parametros.inteiro(req, "doses");

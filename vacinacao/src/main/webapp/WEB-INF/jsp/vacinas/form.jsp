@@ -3,15 +3,19 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="${ctx}/vacinas">Vacinas</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Nova</li>
+        <c:if test="${not empty vacina.id}">
+            <li class="breadcrumb-item"><a href="${ctx}/vacinas/detalhe?id=${vacina.id}"><c:out value="${vacina.titulo}" /></a></li>
+        </c:if>
+        <li class="breadcrumb-item active" aria-current="page">${empty vacina.id ? 'Nova' : 'Editar'}</li>
     </ol>
 </nav>
 
 <div class="row justify-content-center">
     <div class="col-12 col-lg-8">
         <div class="card">
-            <div class="card-header"><h1 class="h5 mb-0">Nova vacina</h1></div>
-            <form method="post" action="${ctx}/vacinas/novo" class="card-body" id="formVacina">
+            <div class="card-header"><h1 class="h5 mb-0">${empty vacina.id ? 'Nova vacina' : 'Editar vacina'}</h1></div>
+            <form method="post" action="${ctx}/vacinas/${empty vacina.id ? 'novo' : 'editar'}" class="card-body" id="formVacina">
+                <c:if test="${not empty vacina.id}"><input type="hidden" name="id" value="${vacina.id}"></c:if>
                 <div class="mb-3">
                     <label for="titulo" class="form-label">Título <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="titulo" name="titulo" maxlength="60" required autofocus
@@ -24,7 +28,13 @@
                               placeholder="Opcional, até 200 caracteres">${fn:escapeXml(vacina.descricao)}</textarea>
                 </div>
 
-                <div class="row g-3 mb-3">
+                <c:if test="${esquemaBloqueado}">
+                    <div class="alert alert-secondary py-2 small">
+                        <i class="bi bi-lock"></i> Esta vacina já tem agendas: doses, periodicidade e intervalo não podem
+                        ser alterados, pois as séries existentes foram geradas com o esquema atual.
+                    </div>
+                </c:if>
+                <fieldset class="row g-3 mb-3" ${esquemaBloqueado ? 'disabled' : ''}>
                     <div class="col-12 col-sm-4">
                         <label for="doses" class="form-label">Doses <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="doses" name="doses" min="1" step="1" required
@@ -44,7 +54,7 @@
                         <input type="number" class="form-control" id="intervalo" name="intervalo" min="1" step="1"
                                value="${vacina.intervalo}" data-multidose>
                     </div>
-                </div>
+                </fieldset>
                 <p class="form-text mt-n2" id="ajudaDoses">
                     Para vacinas com mais de uma dose, as próximas serão agendadas a cada
                     <em>intervalo</em> unidades da <em>periodicidade</em>

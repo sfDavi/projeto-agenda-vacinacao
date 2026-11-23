@@ -70,6 +70,7 @@
     </div>
     <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
         <a href="${ctx}/vacinas" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+        <a href="${ctx}/vacinas/editar?id=${vacina.id}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>
         <a href="${ctx}/agendas/novo?vacina=${vacina.id}" class="btn btn-primary ms-auto">
             <i class="bi bi-calendar-plus"></i> Agendar esta vacina</a>
         <form method="post" action="${ctx}/vacinas/excluir" class="d-inline"

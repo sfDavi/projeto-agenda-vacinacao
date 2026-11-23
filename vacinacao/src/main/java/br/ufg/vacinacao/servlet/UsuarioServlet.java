@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.Set;
 
 /** CRUD de usuários: listagem (com busca por nome), inclusão, detalhe e exclusão. */
-@WebServlet({"/usuarios", "/usuarios/novo", "/usuarios/detalhe", "/usuarios/agendas", "/usuarios/excluir"})
+@WebServlet({"/usuarios", "/usuarios/novo", "/usuarios/editar", "/usuarios/detalhe", "/usuarios/agendas",
+        "/usuarios/excluir"})
 public class UsuarioServlet extends HttpServlet {
 
     private static final int TAMANHO_NOME = 60;
@@ -45,6 +46,17 @@ public class UsuarioServlet extends HttpServlet {
         switch (req.getServletPath()) {
             case "/usuarios" -> listar(req, resp);
             case "/usuarios/novo" -> exibirFormulario(req, resp, new Usuario(), Set.of(), List.of());
+            case "/usuarios/editar" -> {
+                Usuario usuario = dao.buscarComAlergias(Parametros.inteiro(req, "id"));
+                if (usuario == null) {
+                    Mensagens.erro(req, "Usuário não encontrado.");
+                    resp.sendRedirect(req.getContextPath() + "/usuarios");
+                } else {
+                    Set<Integer> selecionadas = new LinkedHashSet<>();
+                    usuario.getAlergias().forEach(a -> selecionadas.add(a.getId()));
+                    exibirFormulario(req, resp, usuario, selecionadas, List.of());
+                }
+            }
             case "/usuarios/detalhe" -> detalhar(req, resp);
             case "/usuarios/agendas" -> cartao(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
@@ -55,7 +67,7 @@ public class UsuarioServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("menuAtivo", "usuarios");
         switch (req.getServletPath()) {
-            case "/usuarios/novo" -> incluir(req, resp);
+            case "/usuarios/novo", "/usuarios/editar" -> salvar(req, resp);
             case "/usuarios/excluir" -> excluir(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
@@ -104,7 +116,7 @@ public class UsuarioServlet extends HttpServlet {
     private void exibirFormulario(HttpServletRequest req, HttpServletResponse resp, Usuario usuario,
                                   Set<Integer> alergiasSelecionadas, List<String> erros)
             throws ServletException, IOException {
-        req.setAttribute("titulo", "Novo usuário");
+        req.setAttribute("titulo", usuario.getId() == null ? "Novo usuário" : "Editar usuário");
         req.setAttribute("usuario", usuario);
         req.setAttribute("alergias", alergiaDAO.listarTodos());
         req.setAttribute("alergiasSelecionadas", alergiasSelecionadas);
@@ -115,9 +127,23 @@ public class UsuarioServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/jsp/usuarios/form.jsp").forward(req, resp);
     }
 
-    private void incluir(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    /** Inclusão (POST /usuarios/novo) ou alteração (POST /usuarios/editar com id). */
+    private void salvar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        boolean edicao = "/usuarios/editar".equals(req.getServletPath());
+        Integer id = null;
+        if (edicao) {
+            Usuario existente = dao.buscarPorId(Parametros.inteiro(req, "id"));
+            if (existente == null) {
+                Mensagens.erro(req, "Usuário não encontrado.");
+                resp.sendRedirect(req.getContextPath() + "/usuarios");
+                return;
+            }
+            id = existente.getId();
+        }
+
         List<String> erros = new ArrayList<>();
         Usuario usuario = lerFormulario(req, erros);
+        usuario.setId(id);
         Set<Integer> alergiaIds = lerAlergias(req, erros);
 
         if (!erros.isEmpty()) {
@@ -135,7 +161,7 @@ public class UsuarioServlet extends HttpServlet {
                     List.of("Não foi possível salvar o usuário. Confira os dados informados."));
             return;
         }
-        Mensagens.sucesso(req, "Usuário \"" + usuario.getNome() + "\" cadastrado.");
+        Mensagens.sucesso(req, "Usuário \"" + usuario.getNome() + "\" " + (edicao ? "alterado." : "cadastrado."));
         resp.sendRedirect(req.getContextPath() + "/usuarios/detalhe?id=" + usuario.getId());
     }
 

@@ -3,15 +3,16 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="${ctx}/alergias">Alergias</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Nova</li>
+        <li class="breadcrumb-item active" aria-current="page">${empty alergia.id ? 'Nova' : 'Editar'}</li>
     </ol>
 </nav>
 
 <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card">
-            <div class="card-header"><h1 class="h5 mb-0">Nova alergia</h1></div>
-            <form method="post" action="${ctx}/alergias/novo" class="card-body">
+            <div class="card-header"><h1 class="h5 mb-0">${empty alergia.id ? 'Nova alergia' : 'Editar alergia'}</h1></div>
+            <form method="post" action="${ctx}/alergias/${empty alergia.id ? 'novo' : 'editar'}" class="card-body">
+                <c:if test="${not empty alergia.id}"><input type="hidden" name="id" value="${alergia.id}"></c:if>
                 <div class="mb-3">
                     <label for="nome" class="form-label">Nome <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="nome" name="nome" maxlength="40" required autofocus

@@ -86,6 +86,7 @@
     </div>
     <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
         <a href="${ctx}/usuarios" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+        <a href="${ctx}/usuarios/editar?id=${usuario.id}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>
         <a href="${ctx}/usuarios/agendas?id=${usuario.id}" class="btn btn-outline-primary ms-auto">
             <i class="bi bi-journal-medical"></i> Cartão de vacinação</a>
         <a href="${ctx}/agendas/novo?usuario=${usuario.id}" class="btn btn-primary">

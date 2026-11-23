@@ -3,15 +3,19 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="${ctx}/usuarios">Usuários</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Novo</li>
+        <c:if test="${not empty usuario.id}">
+            <li class="breadcrumb-item"><a href="${ctx}/usuarios/detalhe?id=${usuario.id}"><c:out value="${usuario.nome}" /></a></li>
+        </c:if>
+        <li class="breadcrumb-item active" aria-current="page">${empty usuario.id ? 'Novo' : 'Editar'}</li>
     </ol>
 </nav>
 
 <div class="row justify-content-center">
     <div class="col-12 col-xl-10">
         <div class="card">
-            <div class="card-header"><h1 class="h5 mb-0">Novo usuário</h1></div>
-            <form method="post" action="${ctx}/usuarios/novo" class="card-body">
+            <div class="card-header"><h1 class="h5 mb-0">${empty usuario.id ? 'Novo usuário' : 'Editar usuário'}</h1></div>
+            <form method="post" action="${ctx}/usuarios/${empty usuario.id ? 'novo' : 'editar'}" class="card-body">
+                <c:if test="${not empty usuario.id}"><input type="hidden" name="id" value="${usuario.id}"></c:if>
 
                 <h2 class="h6 text-body-secondary text-uppercase mb-3">Dados pessoais</h2>
                 <div class="row g-3 mb-4">

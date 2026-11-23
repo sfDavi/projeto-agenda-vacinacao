@@ -15,9 +15,16 @@ public class AlergiaDAO extends GenericDAO<Alergia> {
 
     /** Verifica se já existe alergia com o mesmo nome (sem diferenciar maiúsculas). */
     public boolean existeNome(String nome) {
+        return existeNome(nome, null);
+    }
+
+    /** Como {@link #existeNome(String)}, ignorando a própria alergia ({@code ignorarId}) na edição. */
+    public boolean existeNome(String nome, Integer ignorarId) {
         return consultar(em -> em.createQuery(
-                        "SELECT COUNT(a) FROM Alergia a WHERE LOWER(a.nome) = LOWER(:nome)", Long.class)
+                        "SELECT COUNT(a) FROM Alergia a WHERE LOWER(a.nome) = LOWER(:nome)"
+                                + " AND (:ignorar IS NULL OR a.id <> :ignorar)", Long.class)
                 .setParameter("nome", nome)
+                .setParameter("ignorar", ignorarId)
                 .getSingleResult() > 0);
     }
 

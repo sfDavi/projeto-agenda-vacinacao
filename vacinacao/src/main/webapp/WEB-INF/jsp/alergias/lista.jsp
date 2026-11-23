@@ -29,6 +29,8 @@
                             <td class="text-body-secondary">${a.id}</td>
                             <td><c:out value="${a.nome}" /></td>
                             <td class="acoes text-end">
+                                <a href="${ctx}/alergias/editar?id=${a.id}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i> Editar</a>
                                 <form method="post" action="${ctx}/alergias/excluir" class="d-inline"
                                       data-confirmar="Excluir a alergia &quot;${fn:escapeXml(a.nome)}&quot;?">
                                     <input type="hidden" name="id" value="${a.id}">

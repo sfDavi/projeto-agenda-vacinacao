@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Formulário de vacina: com dose única, periodicidade e intervalo não se aplicam
     const campoDoses = document.getElementById('doses');
     const camposMultidose = document.querySelectorAll('[data-multidose]');
-    if (campoDoses && camposMultidose.length) {
+    // (não mexe quando o esquema está bloqueado - edição de vacina que já tem agendas)
+    if (campoDoses && camposMultidose.length && !campoDoses.matches(':disabled')) {
         const atualizar = () => {
             const multidose = Number(campoDoses.value) > 1;
             camposMultidose.forEach((campo) => {

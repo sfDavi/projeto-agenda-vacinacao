@@ -62,6 +62,8 @@
                             <td class="acoes text-end">
                                 <a href="${ctx}/vacinas/detalhe?id=${v.id}" class="btn btn-sm btn-outline-primary" title="Detalhes">
                                     <i class="bi bi-eye"></i> Detalhes</a>
+                                <a href="${ctx}/vacinas/editar?id=${v.id}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i></a>
                                 <form method="post" action="${ctx}/vacinas/excluir" class="d-inline"
                                       data-confirmar="Excluir a vacina &quot;${fn:escapeXml(v.titulo)}&quot;?">
                                     <input type="hidden" name="id" value="${v.id}">

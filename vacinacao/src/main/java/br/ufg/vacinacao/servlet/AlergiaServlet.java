@@ -15,8 +15,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** CRUD de alergias: listagem, inclusão e exclusão. */
-@WebServlet({"/alergias", "/alergias/novo", "/alergias/excluir"})
+/** CRUD de alergias: listagem, inclusão, alteração e exclusão. */
+@WebServlet({"/alergias", "/alergias/novo", "/alergias/editar", "/alergias/excluir"})
 public class AlergiaServlet extends HttpServlet {
 
     private static final int TAMANHO_NOME = 40;
@@ -28,6 +28,15 @@ public class AlergiaServlet extends HttpServlet {
         req.setAttribute("menuAtivo", "alergias");
         switch (req.getServletPath()) {
             case "/alergias/novo" -> exibirFormulario(req, resp, new Alergia(), List.of());
+            case "/alergias/editar" -> {
+                Alergia alergia = dao.buscarPorId(Parametros.inteiro(req, "id"));
+                if (alergia == null) {
+                    Mensagens.erro(req, "Alergia não encontrada.");
+                    resp.sendRedirect(req.getContextPath() + "/alergias");
+                } else {
+                    exibirFormulario(req, resp, alergia, List.of());
+                }
+            }
             case "/alergias" -> listar(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
@@ -37,7 +46,7 @@ public class AlergiaServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("menuAtivo", "alergias");
         switch (req.getServletPath()) {
-            case "/alergias/novo" -> incluir(req, resp);
+            case "/alergias/novo", "/alergias/editar" -> salvar(req, resp);
             case "/alergias/excluir" -> excluir(req, resp);
             default -> resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
@@ -51,21 +60,32 @@ public class AlergiaServlet extends HttpServlet {
 
     private void exibirFormulario(HttpServletRequest req, HttpServletResponse resp, Alergia alergia, List<String> erros)
             throws ServletException, IOException {
-        req.setAttribute("titulo", "Nova alergia");
+        req.setAttribute("titulo", alergia.getId() == null ? "Nova alergia" : "Editar alergia");
         req.setAttribute("alergia", alergia);
         req.setAttribute("erros", erros);
         req.getRequestDispatcher("/WEB-INF/jsp/alergias/form.jsp").forward(req, resp);
     }
 
-    private void incluir(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    /** Inclusão (POST /alergias/novo) ou alteração (POST /alergias/editar com id). */
+    private void salvar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        boolean edicao = "/alergias/editar".equals(req.getServletPath());
         Alergia alergia = new Alergia(Parametros.texto(req, "nome"));
+        if (edicao) {
+            Alergia existente = dao.buscarPorId(Parametros.inteiro(req, "id"));
+            if (existente == null) {
+                Mensagens.erro(req, "Alergia não encontrada.");
+                resp.sendRedirect(req.getContextPath() + "/alergias");
+                return;
+            }
+            alergia.setId(existente.getId());
+        }
 
         List<String> erros = new ArrayList<>();
         if (alergia.getNome() == null) {
             erros.add("Informe o nome da alergia.");
         } else if (alergia.getNome().length() > TAMANHO_NOME) {
             erros.add("O nome deve ter no máximo " + TAMANHO_NOME + " caracteres.");
-        } else if (dao.existeNome(alergia.getNome())) {
+        } else if (dao.existeNome(alergia.getNome(), alergia.getId())) {
             erros.add("Já existe uma alergia chamada \"" + alergia.getNome() + "\".");
         }
         if (!erros.isEmpty()) {
@@ -80,7 +100,7 @@ public class AlergiaServlet extends HttpServlet {
             exibirFormulario(req, resp, alergia, List.of("Não foi possível salvar: já existe uma alergia equivalente."));
             return;
         }
-        Mensagens.sucesso(req, "Alergia \"" + alergia.getNome() + "\" cadastrada.");
+        Mensagens.sucesso(req, "Alergia \"" + alergia.getNome() + "\" " + (edicao ? "alterada." : "cadastrada."));
         resp.sendRedirect(req.getContextPath() + "/alergias");
     }
 

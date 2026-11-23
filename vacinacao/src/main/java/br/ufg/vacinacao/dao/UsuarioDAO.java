@@ -52,19 +52,34 @@ public class UsuarioDAO extends GenericDAO<Usuario> {
      */
     public Usuario salvar(Usuario usuario, Collection<Integer> alergiaIds) {
         return emTransacao(em -> {
-            usuario.getAlergias().clear();
+            // Na alteração, copia os dados para a entidade gerenciada (preserva as agendas do usuário)
+            Usuario alvo = usuario;
+            if (usuario.getId() != null) {
+                alvo = em.find(Usuario.class, usuario.getId());
+                if (alvo == null) {
+                    throw new IllegalArgumentException("Usuário inexistente: " + usuario.getId());
+                }
+                alvo.setNome(usuario.getNome());
+                alvo.setDataNascimento(usuario.getDataNascimento());
+                alvo.setSexo(usuario.getSexo());
+                alvo.setLogradouro(usuario.getLogradouro());
+                alvo.setNumero(usuario.getNumero());
+                alvo.setSetor(usuario.getSetor());
+                alvo.setCidade(usuario.getCidade());
+                alvo.setUf(usuario.getUf());
+            }
+            alvo.getAlergias().clear();
             for (Integer alergiaId : alergiaIds) {
                 Alergia alergia = em.find(Alergia.class, alergiaId);
                 if (alergia == null) {
                     throw new IllegalArgumentException("Alergia inexistente: " + alergiaId);
                 }
-                usuario.getAlergias().add(alergia);
+                alvo.getAlergias().add(alergia);
             }
             if (usuario.getId() == null) {
                 em.persist(usuario);
-                return usuario;
             }
-            return em.merge(usuario);
+            return usuario;
         });
     }
 
