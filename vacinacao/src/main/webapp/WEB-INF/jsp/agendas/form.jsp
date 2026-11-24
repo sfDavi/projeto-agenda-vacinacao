@@ -60,7 +60,7 @@
                               placeholder="Opcional, até 200 caracteres">${fn:escapeXml(observacoes)}</textarea>
                 </div>
 
-                <%-- 7A: alerta de contraindicação por alergia (mostrado pelo servidor após tentativa de salvar
+                <%-- Alerta de contraindicação por alergia (mostrado pelo servidor após tentativa de salvar
                      e, ao vivo, por app.js consultando /agendas/contraindicacoes) --%>
                 <div class="alert alert-danger" id="alertaContraindicacao" role="alert"
                      data-contraindicacoes-url="${ctx}/agendas/contraindicacoes" ${empty conflitos ? 'hidden' : ''}>

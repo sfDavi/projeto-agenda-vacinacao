@@ -43,7 +43,7 @@ public class Vacina {
     @Column(name = "intervalo")
     private Integer intervalo;
 
-    /** Item 7A: alergias que contraindicam esta vacina (tabela vacina_alergia, criada em item7.sql). */
+    /** Alergias que contraindicam esta vacina (tabela vacina_alergia, criada em complementos.sql). */
     @ManyToMany
     @JoinTable(name = "vacina_alergia",
             joinColumns = @JoinColumn(name = "vacina_id"),
@@ -55,7 +55,7 @@ public class Vacina {
     }
 
     /**
-     * Soma {@code quantidade} intervalos à data (usado pelo controle de doses - 7B).
+     * Soma {@code quantidade} intervalos à data (usado pelo controle de doses).
      * Para dose única devolve a própria data.
      */
     public LocalDate somarIntervalos(LocalDate data, int quantidade) {

@@ -1,5 +1,5 @@
 <%@ include file="/WEB-INF/jsp/layout/header.jspf" %>
-<%-- Item 7B: próximas aplicações e doses atrasadas de todos os usuários --%>
+<%-- Próximas aplicações e doses atrasadas de todos os usuários --%>
 
 <div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
     <div>

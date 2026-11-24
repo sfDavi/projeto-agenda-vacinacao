@@ -1,14 +1,12 @@
 -- =====================================================================
--- Item 7 - Nova funcionalidade (alterações no banco)
+-- Complementos ao modelo: contraindicações por alergia e controle de doses
 -- Executar DEPOIS de schema.sql e ANTES de dados.sql:
---   mysql -u root -p vacinacao < sql/item7.sql
+--   mysql -u root -p vacinacao < sql/complementos.sql
 --
--- 7A - Alerta de contraindicação por alergia:
---      nova tabela N:N vacina_alergia (alergias que contraindicam uma vacina).
---      Nenhuma tabela existente é alterada.
--- 7B - Controle de doses e próximas aplicações:
---      usa a coluna agendas.dose (já criada em schema.sql); apenas um índice
---      para as consultas por série (usuário + vacina + dose).
+-- * Contraindicações por alergia: nova tabela N:N vacina_alergia
+--   (alergias que contraindicam uma vacina). Nenhuma tabela existente é alterada.
+-- * Controle de doses: usa a coluna agendas.dose (criada em schema.sql);
+--   aqui há apenas um índice para as consultas por série (usuário + vacina + dose).
 -- =====================================================================
 
 USE vacinacao;
@@ -24,5 +22,5 @@ CREATE TABLE vacina_alergia (
     FOREIGN KEY (alergia_id) REFERENCES alergias(id)
 );
 
--- 7B: consultas de série (usuário + vacina, ordenadas por dose)
+-- Controle de doses: consultas de série (usuário + vacina, ordenadas por dose)
 CREATE INDEX idx_agendas_serie ON agendas (usuario_id, vacina_id, dose);

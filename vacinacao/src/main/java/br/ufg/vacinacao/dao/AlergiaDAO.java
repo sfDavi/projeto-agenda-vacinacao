@@ -36,7 +36,7 @@ public class AlergiaDAO extends GenericDAO<Alergia> {
                 .getSingleResult());
     }
 
-    /** 7A: alergias do usuário que são contraindicação da vacina (interseção), por nome. */
+    /** Alergias do usuário que são contraindicação da vacina (interseção), por nome. */
     public List<Alergia> listarConflitos(Integer usuarioId, Integer vacinaId) {
         return consultar(em -> em.createQuery(
                         "SELECT a FROM Vacina v JOIN v.contraindicacoes a "
@@ -48,7 +48,7 @@ public class AlergiaDAO extends GenericDAO<Alergia> {
                 .getResultList());
     }
 
-    /** 7A: para cada vacina contraindicada ao usuário, os nomes das alergias em conflito. */
+    /** Para cada vacina contraindicada ao usuário, os nomes das alergias em conflito. */
     public Map<Integer, List<String>> listarConflitosPorVacina(Integer usuarioId) {
         return consultar(em -> {
             Map<Integer, List<String>> mapa = new LinkedHashMap<>();
@@ -65,7 +65,7 @@ public class AlergiaDAO extends GenericDAO<Alergia> {
         });
     }
 
-    /** Quantas vacinas têm esta alergia como contraindicação (7A). */
+    /** Quantas vacinas têm esta alergia como contraindicação. */
     public long contarVacinas(Integer alergiaId) {
         return consultar(em -> em.createQuery(
                         "SELECT COUNT(v) FROM Vacina v JOIN v.contraindicacoes a WHERE a.id = :id", Long.class)

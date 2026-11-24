@@ -194,7 +194,7 @@ public class AgendaServlet extends HttpServlet {
         try {
             criadas = agendamentoService.agendar(usuarioId, vacinaId, data, hora, observacoes, ciente);
         } catch (ContraindicacaoException e) {
-            // 7A: volta ao formulário com o alerta vermelho e a caixa "Estou ciente"
+            // Contraindicação: volta ao formulário com o alerta vermelho e a caixa "Estou ciente"
             req.setAttribute("conflitos", e.getAlergias());
             exibirFormulario(req, resp, usuarioId, vacinaId, dataTexto, hora, observacoes, List.of());
             return;
@@ -259,7 +259,7 @@ public class AgendaServlet extends HttpServlet {
     }
 
     /**
-     * GET /agendas/contraindicacoes?usuario= (7A): vacinas contraindicadas ao usuário, em JSON.
+     * GET /agendas/contraindicacoes?usuario=: vacinas contraindicadas ao usuário, em JSON.
      * Formato: {"ok":true,"vacinas":{"<idVacina>":["Alergia", ...], ...}}
      */
     private void contraindicacoes(HttpServletRequest req, HttpServletResponse resp) throws IOException {

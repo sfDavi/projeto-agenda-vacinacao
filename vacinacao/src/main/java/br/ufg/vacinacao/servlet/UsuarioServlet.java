@@ -95,7 +95,7 @@ public class UsuarioServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/jsp/usuarios/detalhe.jsp").forward(req, resp);
     }
 
-    /** Item 6 + 7B: cartão de vacinação - agendamentos do usuário agrupados por vacina, com progresso. */
+    /** Item 6: cartão de vacinação - agendamentos do usuário agrupados por vacina, com progresso. */
     private void cartao(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Usuario usuario = dao.buscarComAlergias(Parametros.inteiro(req, "id"));
         if (usuario == null) {

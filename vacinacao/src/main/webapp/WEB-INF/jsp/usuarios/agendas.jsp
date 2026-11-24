@@ -1,5 +1,5 @@
 <%@ include file="/WEB-INF/jsp/layout/header.jspf" %>
-<%-- Item 6 (agendamentos do usuário) + Item 7B (controle de doses) --%>
+<%-- Item 6 (agendamentos do usuário) + controle de doses --%>
 
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -46,7 +46,7 @@
                     <span class="badge ${serie.status.classeCss}">${serie.status.rotulo}</span>
                 </div>
                 <div class="card-body">
-                    <%-- Progresso (7B) --%>
+                    <%-- Progresso --%>
                     <div class="d-flex justify-content-between small mb-1">
                         <span><strong>${serie.realizadas} de ${serie.total}</strong> dose(s) realizada(s)</span>
                         <span>${serie.percentual}%</span>
@@ -56,7 +56,7 @@
                         <div class="progress-bar ${serie.status == 'CONCLUIDA' ? 'bg-success' : ''}" style="width: ${serie.percentual}%"></div>
                     </div>
 
-                    <%-- Próxima aplicação (7B) --%>
+                    <%-- Próxima aplicação --%>
                     <c:if test="${not empty serie.proxima}">
                         <div class="alert ${serie.proxima.atrasada ? 'alert-danger' : 'alert-info'} py-2 mb-3">
                             <i class="bi ${serie.proxima.atrasada ? 'bi-alarm' : 'bi-calendar-event'}"></i>

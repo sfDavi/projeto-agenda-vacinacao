@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-/** Item 7B: próximas aplicações, recalcular doses e reagendar dose cancelada. */
+/** Controle de doses: próximas aplicações, recalcular doses e reagendar dose cancelada. */
 @WebServlet({"/doses/proximas", "/doses/recalcular", "/doses/reagendar"})
 public class DoseServlet extends HttpServlet {
 

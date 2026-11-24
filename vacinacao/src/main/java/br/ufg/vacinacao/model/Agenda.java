@@ -65,17 +65,17 @@ public class Agenda {
         return DatasUtil.formatar(dataSituacao);
     }
 
-    /** Dias de hoje até a data da agenda (negativo = já passou). Calculado, não armazenado (7B). */
+    /** Dias de hoje até a data da agenda (negativo = já passou). Calculado, não armazenado. */
     public long getDiasAte() {
         return ChronoUnit.DAYS.between(LocalDate.now(), data);
     }
 
-    /** {@code true} se ainda está AGENDADO e a data já passou sem baixa (7B). */
+    /** {@code true} se ainda está AGENDADO e a data já passou sem baixa. */
     public boolean isAtrasada() {
         return situacao == Situacao.AGENDADO && data.isBefore(LocalDate.now());
     }
 
-    /** "hoje", "amanhã", "em 5 dias", "atrasada há 3 dias" (7B). */
+    /** "hoje", "amanhã", "em 5 dias", "atrasada há 3 dias". */
     public String getPrazo() {
         long dias = getDiasAte();
         if (dias == 0) {

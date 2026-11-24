@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Item 7B: progresso, próxima dose, data mínima e separação de séries (sem banco). */
+/** Controle de doses: progresso, próxima dose, data mínima e separação de séries (sem banco). */
 class SerieDosesTest {
 
     private static final LocalDate HOJE = LocalDate.now();

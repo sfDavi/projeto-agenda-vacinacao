@@ -140,7 +140,7 @@ public class AgendaDAO extends GenericDAO<Agenda> {
                 .getResultList());
     }
 
-    /** Agendas ainda AGENDADO com data até {@code limite} - inclui as atrasadas (7B). */
+    /** Agendas ainda AGENDADO com data até {@code limite} - inclui as atrasadas. */
     public List<Agenda> listarAgendadasAte(LocalDate limite) {
         return consultar(em -> em.createQuery(SELECT_COMPLETO
                         + "WHERE a.situacao = :s AND a.data <= :limite ORDER BY a.data, a.hora, a.usuario.nome",

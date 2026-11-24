@@ -12,7 +12,7 @@ public class VacinaDAO extends GenericDAO<Vacina> {
         super(Vacina.class, "e.titulo");
     }
 
-    /** Todas as vacinas com as contraindicações (7A) já carregadas, por título. */
+    /** Todas as vacinas com as contraindicações já carregadas, por título. */
     public List<Vacina> listarComContraindicacoes() {
         return consultar(em -> em.createQuery(
                         "SELECT DISTINCT v FROM Vacina v LEFT JOIN FETCH v.contraindicacoes ORDER BY v.titulo",

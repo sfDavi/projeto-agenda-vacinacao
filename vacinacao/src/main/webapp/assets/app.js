@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         atualizarPrevia();
 
-        // 7A: marca com ⚠ as vacinas contraindicadas ao usuário e mostra o alerta da vacina escolhida
+        // Contraindicação: marca com ⚠ as vacinas contraindicadas ao usuário e mostra o alerta da vacina escolhida
         const alerta = document.getElementById('alertaContraindicacao');
         if (alerta) {
             const nomesConflito = alerta.querySelector('[data-alergias-conflito]');

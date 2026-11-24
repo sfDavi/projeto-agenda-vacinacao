@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Item 7B - uma série de doses de uma vacina para um usuário, com o progresso e a próxima aplicação.
+ * Uma série de doses de uma vacina para um usuário, com o progresso e a próxima aplicação.
  * Tudo aqui é <strong>calculado</strong> a partir das agendas; nada é armazenado.
  */
 public class SerieDoses {

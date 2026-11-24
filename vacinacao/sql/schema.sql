@@ -5,12 +5,12 @@
 -- Adequações ao MER (justificadas no README):
 --   * usuario_id / vacina_id em agendas  -> relacionamentos 1:N do MER
 --   * tabela usuario_alergia             -> relacionamento N:N do MER
---   * coluna dose em agendas             -> Item 6 / 7B
+--   * coluna dose em agendas             -> número da dose de cada agenda
 --   * situacao guarda AGENDADO/REALIZADO/CANCELADO (enum Java, STRING)
 --   * hora como CHAR(5) "HH:mm"
 --   * CHECK de coerência situacao x data_situacao
 --
--- A tabela vacina_alergia (Item 7A) fica em item7.sql.
+-- A tabela vacina_alergia (contraindicações por alergia) fica em complementos.sql.
 -- Executar: mysql -u root -p < sql/schema.sql
 -- =====================================================================
 
@@ -69,7 +69,7 @@ CREATE TABLE agendas (
     observacoes   VARCHAR(200),
     usuario_id    INT          NOT NULL,
     vacina_id     INT          NOT NULL,
-    dose          INT          NOT NULL,          -- adequação (Item 6 / 7B)
+    dose          INT          NOT NULL,          -- adequação: número da dose
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
     FOREIGN KEY (vacina_id)  REFERENCES vacinas(id),
     CHECK (situacao IN ('AGENDADO','REALIZADO','CANCELADO')),

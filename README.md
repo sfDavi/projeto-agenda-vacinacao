@@ -32,7 +32,7 @@ vacinacao/                 projeto Maven
 ├── deploy.bat             build + cópia do .war para o Tomcat
 ├── sql/
 │   ├── schema.sql         criação do banco e das tabelas (MER + adequações)
-│   ├── item7.sql          alterações do Item 7 (tabela vacina_alergia + índice)
+│   ├── complementos.sql   contraindicações por alergia (tabela vacina_alergia) + índice de séries de doses
 │   └── dados.sql          carga de exemplo
 └── src/
     ├── main/java/br/ufg/vacinacao/
@@ -64,12 +64,24 @@ Arquitetura: **Servlet → Service → DAO (JPA/Hibernate) → MySQL**, com as J
 
 Na pasta `vacinacao`, execute os três scripts **nesta ordem** (o primeiro cria o banco `vacinacao`):
 
+Prompt de comando (cmd), Git Bash, Linux ou macOS:
+
 ```bash
 mysql -u root -p < sql/schema.sql
-mysql -u root -p vacinacao < sql/item7.sql
+mysql -u root -p vacinacao < sql/complementos.sql
 mysql -u root -p vacinacao < sql/dados.sql
 ```
 
+PowerShell (não aceita o redirecionamento `<`):
+
+```powershell
+mysql -u root -p --default-character-set=utf8mb4 -e "source sql/schema.sql"
+mysql -u root -p --default-character-set=utf8mb4 -D vacinacao -e "source sql/complementos.sql"
+mysql -u root -p --default-character-set=utf8mb4 -D vacinacao -e "source sql/dados.sql"
+```
+
+> Se o `mysql` não estiver no PATH, use o caminho completo (ex.: `& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"`). Se o MySQL estiver em outra máquina ou no WSL, acrescente `-h 127.0.0.1`.
+>
 > `schema.sql` apaga e recria as tabelas: use em um banco `vacinacao` sem dados importantes.
 > `dados.sql` é opcional, mas recomendado para ver o sistema funcionando (as datas são relativas ao dia de hoje).
 
@@ -98,15 +110,25 @@ export VACINACAO_DB_PASSWORD=minhaSenha
 
 ### 4. Compilar e publicar
 
-Com o script (Windows), informando a pasta do Tomcat:
+Com o script (Windows), informando a pasta do Tomcat (a que contém `bin`, `conf` e `webapps`). No mesmo terminal em que definiu a senha do passo 3:
 
+Prompt de comando (cmd):
 ```bat
 cd vacinacao
 set CATALINA_HOME=C:\caminho\apache-tomcat-10.1.x
 deploy.bat start
 ```
 
-O `deploy.bat` executa `mvn clean package` (incluindo os testes), copia `target\vacinacao.war` para `%CATALINA_HOME%\webapps` e, com `start`, inicia o Tomcat.
+PowerShell:
+```powershell
+cd vacinacao
+$env:CATALINA_HOME = "C:\caminho\apache-tomcat-10.1.x"
+.\deploy.bat start
+```
+
+O `deploy.bat` executa `mvn clean package` (incluindo os testes), copia `target\vacinacao.war` para `%CATALINA_HOME%\webapps` e, com `start`, inicia o Tomcat. Se o Maven não estiver no PATH, defina antes a variável `MVN` com o caminho do `mvn.cmd` (ex.: `$env:MVN = "C:\maven\bin\mvn.cmd"`).
+
+Para parar o Tomcat: `%CATALINA_HOME%\bin\shutdown.bat` (no PowerShell, `& "$env:CATALINA_HOME\bin\shutdown.bat"`).
 
 Manualmente (qualquer sistema):
 
@@ -137,7 +159,7 @@ Na inicialização o Hibernate confere se as tabelas batem com o mapeamento (`va
 | 4 | Agendas do dia ordenadas Agendado → Realizado → Cancelado | Menu **Hoje** (`/agendas/hoje`) e card "Agendas de hoje" na página inicial |
 | 5 | Dar baixa (Realizada/Cancelada) com `data_situacao` = hoje | Botões **Realizada** e **Cancelar** (com confirmação e motivo opcional) na listagem, em Hoje, no detalhe e no cartão |
 | 6 | Agendamentos do usuário (data, situação, vacina, dose) | **Cartão de vacinação** (`/usuarios/agendas?id=`), agrupado por vacina |
-| 7 | Nova funcionalidade | **7A** alerta de contraindicação por alergia e **7B** controle de doses e próximas aplicações (descritos no PDF entregue à parte) |
+| Extra | Nova funcionalidade | **Alerta de contraindicação por alergia** (vacinas com alergias contraindicadas; alerta e confirmação ao agendar) e **controle de doses e próximas aplicações** (progresso, atrasos, recálculo e reagendamento de doses, página "Próximas doses"), descritos no PDF entregue à parte |
 | Regra | Gerar as N agendas conforme doses, periodicidade e intervalo | Ao agendar, todas as doses são criadas numa única transação, com prévia das datas antes de salvar |
 
 **Regra de geração das doses:** a dose *i* cai em `data inicial + i × intervalo` unidades da periodicidade (dias, semanas, meses ou anos), sempre calculada a partir da data inicial. Assim o "mesmo dia/mês" é mantido quando possível (31/01 mensal → 28/02 → 31/03; 29/02 anual → 28/02 nos anos não bissextos). Exemplo do enunciado: 5 doses, anual, intervalo 3 → hoje, +3, +6, +9 e +12 anos.
@@ -146,7 +168,7 @@ Na inicialização o Hibernate confere se as tabelas batem com o mapeamento (`va
 
 ## Adequações ao modelo (MER)
 
-O banco segue o MER fornecido, com as adequações abaixo (todas em `sql/schema.sql` e `sql/item7.sql`):
+O banco segue o MER fornecido, com as adequações abaixo (todas em `sql/schema.sql` e `sql/complementos.sql`):
 
 | Adequação | Justificativa |
 |---|---|
@@ -160,7 +182,7 @@ O banco segue o MER fornecido, com as adequações abaixo (todas em `sql/schema.
 | `periodicidade` e `intervalo` nulos em vacinas de dose única | Para uma dose só não existe intervalo entre doses |
 | `CHECK` de coerência entre `situacao` e `data_situacao` | Garante no próprio banco a regra do enunciado: `data_situacao` só é preenchida quando a agenda é realizada ou cancelada |
 | `CHECK`s de domínio (`doses >= 1`, `intervalo >= 1`, `sexo`, `situacao`) e `nome` único em `alergias` | Integridade dos dados também fora da aplicação |
-| Tabela `vacina_alergia` e índice `idx_agendas_serie` (em `item7.sql`) | Nova funcionalidade do Item 7: contraindicações por alergia (7A) e consultas por série de doses (7B) |
+| Tabela `vacina_alergia` e índice `idx_agendas_serie` (em `complementos.sql`) | Nova funcionalidade: contraindicações por alergia e consultas por série de doses |
 | Banco em `utf8mb4` | Acentuação correta em nomes e observações |
 
 **Exclusões e integridade:**
@@ -180,4 +202,4 @@ cd vacinacao
 mvn test
 ```
 
-24 testes JUnit cobrem a regra de geração das datas (exemplo do enunciado, 31/01 mensal, 29/02 anual, dias e semanas), o formato da hora e o controle de doses do Item 7B (progresso, atraso, data mínima, reagendamento e separação de séries).
+24 testes JUnit cobrem a regra de geração das datas (exemplo do enunciado, 31/01 mensal, 29/02 anual, dias e semanas), o formato da hora e o controle de doses (progresso, atraso, data mínima, reagendamento e separação de séries).

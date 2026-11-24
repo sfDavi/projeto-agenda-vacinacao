@@ -1,5 +1,5 @@
 -- =====================================================================
--- Carga de exemplo. Executar depois de schema.sql e item7.sql:
+-- Carga de exemplo. Executar depois de schema.sql e complementos.sql:
 --   mysql -u root -p vacinacao < sql/dados.sql
 -- As datas das agendas são relativas a CURDATE() para que sempre haja
 -- agendas "de hoje", passadas (com baixa) e futuras.
@@ -23,7 +23,7 @@ INSERT INTO vacinas (id, titulo, descricao, doses, periodicidade, intervalo) VAL
     (5, 'Dupla Adulto',   'Difteria e tétano - reforço a cada 10 anos',         5, 4,    3),
     (6, 'Antirrábica',    'Esquema pós-exposição',                              4, 1,    3);
 
--- Item 7A: contraindicações (tabela de item7.sql)
+-- Contraindicações por alergia (tabela criada em complementos.sql)
 INSERT INTO vacina_alergia (vacina_id, alergia_id) VALUES
     (1, 1),   -- Febre Amarela x Ovo
     (1, 2),   -- Febre Amarela x Gelatina
@@ -69,7 +69,7 @@ INSERT INTO agendas (data, hora, situacao, data_situacao, observacoes, usuario_i
     (DATE_SUB(CURDATE(), INTERVAL 5 DAY),   '11:00', 'AGENDADO', NULL, NULL, 2, 4, 1),
     (DATE_ADD(CURDATE(), INTERVAL 26 DAY),  '11:00', 'AGENDADO', NULL, NULL, 2, 4, 2);
 
--- Item 7B: Antirrábica (4 doses, a cada 3 dias) para Carlos. A 1ª dose foi aplicada com 6 dias de
+-- Controle de doses: Antirrábica (4 doses, a cada 3 dias) para Carlos. A 1ª dose foi aplicada com 6 dias de
 -- atraso; a 2ª ficou antes da data mínima (aplicação + 3 dias) -> o sistema sugere recalcular.
 INSERT INTO agendas (data, hora, situacao, data_situacao, observacoes, usuario_id, vacina_id, dose) VALUES
     (DATE_SUB(CURDATE(), INTERVAL 10 DAY), '15:00', 'REALIZADO', DATE_SUB(CURDATE(), INTERVAL 4 DAY), NULL, 4, 6, 1),

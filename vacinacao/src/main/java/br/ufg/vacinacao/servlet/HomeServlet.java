@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Painel inicial: agendas de hoje (Item 4) com baixa rápida. Próximas aplicações (7B) entram na Fase 5. */
+/** Painel inicial: agendas de hoje (Item 4) com baixa rápida, e resumo das próximas aplicações. */
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
 
@@ -36,7 +36,7 @@ public class HomeServlet extends HttpServlet {
         // Sempre tenta consultar: se o banco voltou depois de uma falha no startup, o painel se recupera sozinho
         try {
             req.setAttribute("agendasHoje", agendaDAO.listarDoDia(hoje));
-            // 7B: atrasadas + próximas (sem as de hoje, que já estão no outro card)
+            // Atrasadas + próximas (sem as de hoje, que já estão no outro card)
             List<Agenda> pendentes = doseService.proximasEAtrasadas().stream()
                     .filter(a -> !a.getData().equals(hoje))
                     .toList();

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Regra de geração automática de agendas (seção 5 do plano).
+ * Regra de geração automática de agendas.
  * <p>
  * Ao agendar a vacina V para o usuário U na data D e hora H, são criadas V.doses agendas:
  * a dose i (0-based) cai em {@code D + i × V.intervalo} unidades de {@code V.periodicidade}.
@@ -53,7 +53,7 @@ public class AgendamentoService {
     /**
      * Valida e grava, numa única transação, todas as agendas da série.
      *
-     * Item 7A: se o usuário tiver alergia que contraindica a vacina, o agendamento só prossegue com
+     * Contraindicação: se o usuário tiver alergia que contraindica a vacina, o agendamento só prossegue com
      * {@code ciente = true}; nesse caso o texto do alerta é gravado nas observações (rastreabilidade).
      *
      * @return as agendas criadas, em ordem de dose
@@ -91,7 +91,7 @@ public class AgendamentoService {
             throw new RegraNegocioException(erros);
         }
 
-        // 7A - contraindicação por alergia
+        // Contraindicação por alergia
         List<String> conflitos = ContraindicacaoService.nomes(
                 contraindicacaoService.conflitos(usuario.getId(), vacina.getId()));
         if (!conflitos.isEmpty()) {

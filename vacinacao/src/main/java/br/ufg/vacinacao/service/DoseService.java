@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Item 6 (agendamentos do usuário) e Item 7B (controle de doses e próximas aplicações).
+ * Item 6 (agendamentos do usuário) e controle de doses e próximas aplicações.
  * <p>
  * Progresso, próxima dose, atraso e data mínima são <strong>calculados</strong> a partir das agendas.
  */
@@ -75,7 +75,7 @@ public class DoseService {
 
     /**
      * "Recalcular próximas doses": reprograma as doses AGENDADO restantes da série a partir da data real
-     * de aplicação da última dose realizada (mesma regra da seção 5: data base + k × intervalo).
+     * de aplicação da última dose realizada (mesma regra da geração automática: data base + k × intervalo).
      * Se a data calculada para a próxima dose já tiver passado, a série recomeça em hoje.
      *
      * @return quantidade de agendas reprogramadas

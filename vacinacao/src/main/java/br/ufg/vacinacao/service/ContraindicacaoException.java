@@ -3,7 +3,7 @@ package br.ufg.vacinacao.service;
 import java.util.List;
 
 /**
- * Item 7A: o usuário tem alergia que contraindica a vacina e o operador ainda não confirmou
+ * O usuário tem alergia que contraindica a vacina e o operador ainda não confirmou
  * "Estou ciente - prosseguir mesmo assim".
  */
 public class ContraindicacaoException extends RegraNegocioException {

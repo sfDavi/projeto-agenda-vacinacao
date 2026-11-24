@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Item 7A - Alerta de contraindicação por alergia.
+ * Alerta de contraindicação por alergia.
  * <p>
  * Cruza as alergias do usuário com as alergias registradas como contraindicação da vacina
  * ({@code usuario.alergias ∩ vacina.contraindicacoes}).

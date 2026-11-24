@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Regra de geração das datas das doses (seção 5 / plano de testes da seção 9). */
+/** Regra de geração das datas das doses. */
 class AgendamentoServiceTest {
 
     private static Vacina vacina(int doses, Periodicidade periodicidade, Integer intervalo) {
