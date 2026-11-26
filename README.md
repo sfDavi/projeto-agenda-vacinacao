@@ -5,6 +5,9 @@ Autor: **Davi de Souza Fernandes** (trabalho individual).
 
 Sistema web para cadastrar vacinas, alergias e usuários, agendar vacinas com geração automática de todas as doses, dar baixa nas aplicações e acompanhar o cartão de vacinação de cada usuário.
 
+## Demonstração
+https://github.com/user-attachments/assets/2a36cf73-9ea0-4f11-bf6f-b87991b231bd
+
 ---
 
 ## Tecnologias
