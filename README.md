@@ -1,7 +1,6 @@
 # Agendamento de Vacinas
 
-Projeto final da disciplina **Software para Persistência de Dados (INF0301)**.
-Autor: **Davi de Souza Fernandes** (trabalho individual).
+Projeto final da disciplina **Software para Persistência de Dados
 
 Sistema web para cadastrar vacinas, alergias e usuários, agendar vacinas com geração automática de todas as doses, dar baixa nas aplicações e acompanhar o cartão de vacinação de cada usuário.
 
